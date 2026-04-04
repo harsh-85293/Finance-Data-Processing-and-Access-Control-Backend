@@ -13,7 +13,7 @@ cd financedashboardbackend
 cp .env.example .env
 ```
 
-Fill in `MONGODB_URI`, `JWT_SECRET`, and `CLIENT_ORIGIN` if the front end isn’t on `http://localhost:3000`.
+Fill in `MONGODB_URI` and `JWT_SECRET`. **`CLIENT_ORIGIN` is optional** for a backend-only API: leave it unset so Postman, curl, and browser tests work without a separate frontend. Set it later if you add a web app and want a strict CORS allow-list.
 
 ```bash
 npm install
@@ -22,7 +22,7 @@ npm run dev
 
 Port defaults to `4000`. Smoke: `GET /api/health`. Tests: `npm test` (health route only, no Mongo needed).
 
-**Vercel:** Root Directory **empty** (repo root). Env: `MONGODB_URI`, `JWT_SECRET`, `CLIENT_ORIGIN`. For production, set `CLIENT_ORIGIN` to your real site (e.g. `https://your-app.vercel.app`), not `http://localhost:3000`, or browser calls will be blocked by CORS. `VERCEL_URL` is auto-set for CORS. If you still see Vercel’s **404 NOT_FOUND**, trigger a fresh deploy after the latest commit (root `package.json` + `includeFiles` fix the serverless bundle).
+**Vercel:** Root Directory **empty** (repo root). Env: `MONGODB_URI`, `JWT_SECRET` (required). **You can omit `CLIENT_ORIGIN`** for a backend-only submission. If you previously set `CLIENT_ORIGIN` to `http://localhost:3000`, remove it on Vercel so CORS stays open for testing. If you still see **404 NOT_FOUND**, redeploy after the latest commit.
 
 **Other hosts:** use `npm start` with the same env vars (long-running process).
 

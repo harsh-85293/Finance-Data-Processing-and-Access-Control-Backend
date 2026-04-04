@@ -10,32 +10,29 @@ const dashboardRoutes = require("./routes/dashboard");
 
 const app = express();
 
-const allowed = new Set();
-if (process.env.CLIENT_ORIGIN) {
-  allowed.add(process.env.CLIENT_ORIGIN);
-}
-if (process.env.VERCEL_URL) {
-  allowed.add(`https://${process.env.VERCEL_URL}`);
-}
-const fallback = process.env.CLIENT_ORIGIN || "http://localhost:3000";
-if (allowed.size === 0) {
-  allowed.add(fallback);
+// Backend-only / assessment: omit CLIENT_ORIGIN to allow any origin (Postman, curl, browser).
+// Set CLIENT_ORIGIN when you have a real frontend and want a strict allow-list.
+const clientOrigin = process.env.CLIENT_ORIGIN;
+const corsOptions = { credentials: true };
+if (!clientOrigin) {
+  corsOptions.origin = true;
+} else {
+  const allowed = new Set([clientOrigin]);
+  if (process.env.VERCEL_URL) {
+    allowed.add(`https://${process.env.VERCEL_URL}`);
+  }
+  corsOptions.origin = (origin, cb) => {
+    if (!origin) {
+      return cb(null, true);
+    }
+    if (allowed.has(origin)) {
+      return cb(null, true);
+    }
+    return cb(null, false);
+  };
 }
 
-app.use(
-  cors({
-    origin(origin, cb) {
-      if (!origin) {
-        return cb(null, true);
-      }
-      if (allowed.has(origin)) {
-        return cb(null, true);
-      }
-      return cb(null, false);
-    },
-    credentials: true,
-  })
-);
+app.use(cors(corsOptions));
 app.use(express.json({ limit: "1mb" }));
 app.use(cookieParser());
 
