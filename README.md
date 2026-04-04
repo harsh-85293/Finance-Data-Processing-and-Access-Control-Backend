@@ -1,6 +1,6 @@
 # Finance dashboard backend
 
-Express API, Mongoose, JWT in a cookie (Bearer header works too). Code is in `financedashboardbackend/`.
+Express API, Mongoose, JWT in a cookie (Bearer header works too). Code is in `financedashboardbackend/` (`routes`, `models`, `middlewares`, `utils` for validation and tokens).
 
 **Roles:** `viewer` (dashboard summary only), `analyst` (read records + summary), `admin` (records + users). Inactive accounts get 403 on protected routes.
 
@@ -13,7 +13,7 @@ cd financedashboardbackend
 cp .env.example .env
 ```
 
-Fill in `MONGODB_URI` and `JWT_SECRET`. **`CLIENT_ORIGIN` is optional** for a backend-only API: leave it unset so Postman, curl, and browser tests work without a separate frontend. Set it later if you add a web app and want a strict CORS allow-list.
+Fill in `MONGODB_URI` and `JWT_SECRET`. **`CLIENT_ORIGIN` is optional:** CORS allows common local dev origins, tools with no `Origin` header (Postman, curl), and your Vercel hostname when `VERCEL_URL` is set. Add `CLIENT_ORIGIN` only if the API must accept another browser origin.
 
 ```bash
 npm install
@@ -22,7 +22,7 @@ npm run dev
 
 Port defaults to `4000`. Smoke: `GET /api/health`. Tests: `npm test` (health route only, no Mongo needed).
 
-**Vercel:** Root Directory **empty** (repo root). Env: `MONGODB_URI`, `JWT_SECRET` (required). **You can omit `CLIENT_ORIGIN`** for a backend-only submission. If you previously set `CLIENT_ORIGIN` to `http://localhost:3000`, remove it on Vercel so CORS stays open for testing. If you still see **404 NOT_FOUND**, redeploy after the latest commit.
+**Vercel:** Root Directory **empty** (repo root). Env: `MONGODB_URI`, `JWT_SECRET`. `VERCEL_URL` is injected by Vercel for CORS. **`CLIENT_ORIGIN` is optional.** Redeploy after env changes. If you see **404 NOT_FOUND**, confirm the latest `main` is deployed (root `vercel.json` + `api/`).
 
 **Other hosts:** use `npm start` with the same env vars (long-running process).
 
