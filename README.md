@@ -47,7 +47,7 @@ Register/login set an httpOnly cookie called `token` and return the user. Anythi
 - **analyst** — read finance records + summary  
 - **admin** — records CRUD + user management  
 
-Whoever hits `POST /api/auth/register` first becomes **admin**; after that, self-signup is **viewer** unless an admin creates the account with another role. Inactive users get 403 on protected routes.
+Whoever hits `POST /api/auth/register` first becomes **admin**; after that, every self-signup is **viewer**. **`/auth/register` ignores any `role` in the body** — it is not a way to create admins. To create an **admin** or **analyst**, log in as an admin and use **`POST /api/users`** with JSON including `"role": "admin"` (or `"analyst"`). Inactive users get 403 on protected routes.
 
 Everything’s one shared pool of data — no tenants, no org isolation. That was a deliberate scope cut.
 

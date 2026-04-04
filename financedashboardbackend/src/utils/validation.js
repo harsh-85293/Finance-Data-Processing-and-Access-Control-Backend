@@ -93,13 +93,15 @@ function validateRole(role, { required } = {}) {
     }
     return { ok: true, value: undefined };
   }
-  if (!ALLOWED_ROLES.has(role)) {
+  const normalized =
+    typeof role === "string" ? role.trim().toLowerCase() : role;
+  if (!ALLOWED_ROLES.has(normalized)) {
     return {
       ok: false,
       error: `role must be one of: ${Array.from(ALLOWED_ROLES).join(", ")}`,
     };
   }
-  return { ok: true, value: role };
+  return { ok: true, value: normalized };
 }
 
 function validateStatus(status, { required } = {}) {
