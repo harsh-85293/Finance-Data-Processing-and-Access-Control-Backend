@@ -48,4 +48,4 @@ Content-Type: application/json
 {"amount":120.5,"type":"income","category":"salary","date":"2026-04-01","notes":"April"}
 ```
 
-Don’t commit `.env`.
+
