@@ -1,0 +1,14 @@
+{
+  "name": "Finance Backend Codespace",
+  "image": "mcr.microsoft.com/devcontainers/base:0-focal",
+  "extensions": [
+    "ms-python.python",
+    "ms-azuretools.vscode-docker",
+    "eamodio.gitlens"
+  ],
+  "settings": {
+    "terminal.integrated.shell.linux": "/bin/bash"
+  },
+  "postCreateCommand": "echo 'Devcontainer ready'",
+  "remoteUser": "vscode"
+}
