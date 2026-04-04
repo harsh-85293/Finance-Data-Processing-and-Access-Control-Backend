@@ -8,16 +8,17 @@ First person to hit `POST /api/auth/register` becomes admin; later signups defau
 
 ## Run locally
 
+From the **repo root** (npm workspaces install shared `node_modules` used by Vercel and local dev):
+
 ```bash
-cd financedashboardbackend
-cp .env.example .env
+cp financedashboardbackend/.env.example financedashboardbackend/.env
+npm install
 ```
 
-Fill in `MONGODB_URI` and `JWT_SECRET`. **`CLIENT_ORIGIN` is optional:** CORS allows common local dev origins, tools with no `Origin` header (Postman, curl), and your Vercel hostname when `VERCEL_URL` is set. Add `CLIENT_ORIGIN` only if the API must accept another browser origin.
+Edit `financedashboardbackend/.env`: `MONGODB_URI`, `JWT_SECRET`. **`CLIENT_ORIGIN` is optional** (see above).
 
 ```bash
-npm install
-npm run dev
+npm run dev -w financedashboardbackend
 ```
 
 Port defaults to `4000`. Smoke: `GET /api/health`. Tests: `npm test` (health route only, no Mongo needed).
