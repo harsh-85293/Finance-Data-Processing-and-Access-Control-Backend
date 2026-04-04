@@ -22,9 +22,9 @@ npm run dev
 
 Port defaults to `4000`. Smoke: `GET /api/health`. Tests: `npm test` (health route only, no Mongo needed).
 
-### Vercel
+**Vercel:** set project **Root Directory** to `financedashboardbackend`. Add env: `MONGODB_URI`, `JWT_SECRET`, and `CLIENT_ORIGIN` (your frontend origin, or your Vercel URL if the UI calls this API from the browser). `VERCEL_URL` is set by Vercel for CORS. The `api/` + `vercel.json` setup runs the Express app as a serverless function.
 
-In the Vercel project settings, set **Root Directory** to `financedashboardbackend` (this repo’s API folder). Add **Environment Variables**: `MONGODB_URI`, `JWT_SECRET`, and optionally `CLIENT_ORIGIN` (your frontend origin). Vercel sets `VERCEL_URL` automatically; CORS allows it. Redeploy after changing env.
+**Other hosts:** use `npm start` with the same env vars (long-running process).
 
 ## Routes (all under `/api`)
 

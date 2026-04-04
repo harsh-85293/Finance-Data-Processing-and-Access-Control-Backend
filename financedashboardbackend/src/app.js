@@ -10,12 +10,16 @@ const dashboardRoutes = require("./routes/dashboard");
 
 const app = express();
 
-const allowedOrigins = new Set();
+const allowed = new Set();
 if (process.env.CLIENT_ORIGIN) {
-  allowedOrigins.add(process.env.CLIENT_ORIGIN);
+  allowed.add(process.env.CLIENT_ORIGIN);
 }
 if (process.env.VERCEL_URL) {
-  allowedOrigins.add(`https://${process.env.VERCEL_URL}`);
+  allowed.add(`https://${process.env.VERCEL_URL}`);
+}
+const fallback = process.env.CLIENT_ORIGIN || "http://localhost:3000";
+if (allowed.size === 0) {
+  allowed.add(fallback);
 }
 
 app.use(
@@ -24,10 +28,7 @@ app.use(
       if (!origin) {
         return cb(null, true);
       }
-      if (allowedOrigins.size === 0) {
-        return cb(null, true);
-      }
-      if (allowedOrigins.has(origin)) {
+      if (allowed.has(origin)) {
         return cb(null, true);
       }
       return cb(null, false);
@@ -38,24 +39,21 @@ app.use(
 app.use(express.json({ limit: "1mb" }));
 app.use(cookieParser());
 
-app.use(async (req, res, next) => {
-  if (req.path === "/" || req.path === "/api/health") {
-    return next();
-  }
-  try {
-    await connectDb();
-    next();
-  } catch (err) {
-    next(err);
-  }
-});
-
 app.get("/", (req, res) => {
   res.json({ ok: true, health: "/api/health" });
 });
 
 app.get("/api/health", (req, res) => {
   res.json({ ok: true });
+});
+
+app.use(async (req, res, next) => {
+  try {
+    await connectDb();
+    next();
+  } catch (err) {
+    next(err);
+  }
 });
 
 app.use("/api/auth", authRoutes);
