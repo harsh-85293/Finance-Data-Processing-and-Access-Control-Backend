@@ -1,3 +1,4 @@
 {
+  "installCommand": "cd financedashboardbackend && npm ci",
   "rewrites": [{ "source": "/(.*)", "destination": "/api" }]
 }
