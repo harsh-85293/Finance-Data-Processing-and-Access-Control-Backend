@@ -1,0 +1,7 @@
+{
+  "private": true,
+  "name": "finance-backend-root",
+  "dependencies": {
+    "serverless-http": "^3.2.0"
+  }
+}

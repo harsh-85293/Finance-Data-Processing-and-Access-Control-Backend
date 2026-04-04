@@ -22,7 +22,7 @@ npm run dev
 
 Port defaults to `4000`. Smoke: `GET /api/health`. Tests: `npm test` (health route only, no Mongo needed).
 
-**Vercel:** leave **Root Directory empty** (repo root) so `vercel.json` and `api/` at the top level are picked up. If you previously set Root Directory to `financedashboardbackend`, clear it. Add env: `MONGODB_URI`, `JWT_SECRET`, `CLIENT_ORIGIN`. `VERCEL_URL` is set automatically for CORS.
+**Vercel:** Root Directory **empty** (repo root). Env: `MONGODB_URI`, `JWT_SECRET`, `CLIENT_ORIGIN`. For production, set `CLIENT_ORIGIN` to your real site (e.g. `https://your-app.vercel.app`), not `http://localhost:3000`, or browser calls will be blocked by CORS. `VERCEL_URL` is auto-set for CORS. If you still see Vercel’s **404 NOT_FOUND**, trigger a fresh deploy after the latest commit (root `package.json` + `includeFiles` fix the serverless bundle).
 
 **Other hosts:** use `npm start` with the same env vars (long-running process).
 

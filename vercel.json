@@ -1,4 +1,9 @@
 {
-  "installCommand": "cd financedashboardbackend && npm ci",
-  "rewrites": [{ "source": "/(.*)", "destination": "/api" }]
+  "installCommand": "npm install && cd financedashboardbackend && npm ci",
+  "functions": {
+    "api/index.js": {
+      "includeFiles": "financedashboardbackend/**"
+    }
+  },
+  "rewrites": [{ "source": "/(.*)", "destination": "/api/index" }]
 }
