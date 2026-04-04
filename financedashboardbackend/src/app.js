@@ -2,6 +2,7 @@ const express = require("express");
 const cors = require("cors");
 const cookieParser = require("cookie-parser");
 
+const { connectDb } = require("./config/db");
 const authRoutes = require("./routes/auth");
 const usersRoutes = require("./routes/users");
 const financeRoutes = require("./routes/finance");
@@ -9,16 +10,49 @@ const dashboardRoutes = require("./routes/dashboard");
 
 const app = express();
 
-const clientOrigin = process.env.CLIENT_ORIGIN || "http://localhost:3000";
+const allowedOrigins = new Set();
+if (process.env.CLIENT_ORIGIN) {
+  allowedOrigins.add(process.env.CLIENT_ORIGIN);
+}
+if (process.env.VERCEL_URL) {
+  allowedOrigins.add(`https://${process.env.VERCEL_URL}`);
+}
 
 app.use(
   cors({
-    origin: clientOrigin,
+    origin(origin, cb) {
+      if (!origin) {
+        return cb(null, true);
+      }
+      if (allowedOrigins.size === 0) {
+        return cb(null, true);
+      }
+      if (allowedOrigins.has(origin)) {
+        return cb(null, true);
+      }
+      return cb(null, false);
+    },
     credentials: true,
   })
 );
 app.use(express.json({ limit: "1mb" }));
 app.use(cookieParser());
+
+app.use(async (req, res, next) => {
+  if (req.path === "/" || req.path === "/api/health") {
+    return next();
+  }
+  try {
+    await connectDb();
+    next();
+  } catch (err) {
+    next(err);
+  }
+});
+
+app.get("/", (req, res) => {
+  res.json({ ok: true, health: "/api/health" });
+});
 
 app.get("/api/health", (req, res) => {
   res.json({ ok: true });
