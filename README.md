@@ -94,7 +94,3 @@ Single database, single “organization” — no multi-tenancy. First registrat
 ## Tradeoffs (why it’s shaped like this)
 
 JWT in a cookie plus optional Bearer means one auth mechanism for browsers and for curl/Postman without maintaining two parallel systems — the catch is cookie `secure` / `SameSite` have to match how and where you host the frontend. Mongo keeps the schema loose and development fast; anything that would be a foreign key or join in SQL is enforced in code here. The Vercel handler is the same Express app, so you get cold starts and platform limits instead of a always-on process — fine for this API shape, not for heavy background jobs. The npm workspace at the root means Vercel and `npm ci` see one tree; on some hosts you have to remember `-w financedashboardbackend` or set the subdirectory as root. Dashboard numbers come from aggregation pipelines; they’re fine at moderate data sizes — if this ever grew huge I’d revisit indexes and maybe pre-aggregation. Category filtering is exact (case-insensitive), not fuzzy search, on purpose — simpler and predictable.
-
-## License
-
-See [LICENSE](LICENSE).
