@@ -1,50 +1,51 @@
-# Finance-Data-Processing-and-Access-Control-Backend
+# Finance dashboard backend
 
-Public repository for the Finance Data Processing and Access Control Backend.
+Express API, Mongoose, JWT in a cookie (Bearer header works too). Code is in `financedashboardbackend/`.
 
-This repository contains backend services and infrastructure for securely processing finance data and managing access controls. Start here to set up a secure, configurable development environment (Codespaces) and push your initial code.
+**Roles:** `viewer` (dashboard summary only), `analyst` (read records + summary), `admin` (records + users). Inactive accounts get 403 on protected routes.
 
-Quick start
+First person to hit `POST /api/auth/register` becomes admin; later signups default to `viewer` unless an admin creates the user with another role. Data is one shared pool (no multi-tenant split).
 
-- Create repository locally and push (replace with your GitHub URL):
-
-```powershell
-echo "# Finance-Data-Processing-and-Access-Control-Backend" >> README.md
-git init
-git add README.md
-git commit -m "first commit"
-git branch -M main
-git remote add origin https://github.com/harsh-85293/Finance-Data-Processing-and-Access-Control-Backend.git
-git push -u origin main
-```
-
-Open in Codespaces
-
-- From the GitHub repository page click "Code" → "Codespaces" → "Create codespace".
-- Or open the repository in VS Code and use the Codespaces extension to create a new codespace.
-
-Collaborators
-
-- In GitHub: Settings → Manage access → Invite a collaborator (search by GitHub username or email).
-- Using gh CLI (example):
+## Run locally
 
 ```bash
-gh repo clone harsh-85293/Finance-Data-Processing-and-Access-Control-Backend
-gh repo add-collaborator harsh-85293/Finance-Data-Processing-and-Access-Control-Backend --user USERNAME --permission write
+cd financedashboardbackend
+cp .env.example .env
 ```
 
-Recommended files
+Fill in `MONGODB_URI`, `JWT_SECRET`, and `CLIENT_ORIGIN` if the front end isn’t on `http://localhost:3000`.
 
-- README.md — (this file)
-- LICENSE — pick a license (MIT is common for examples)
-- .gitignore — ignore environment and build artifacts
+```bash
+npm install
+npm run dev
+```
 
-Next steps
+Port defaults to `4000`. Smoke: `GET /api/health`. Tests: `npm test` (health route only, no Mongo needed).
 
-- Initialize the project language and dependencies (Python, Node, .NET, etc.).
-- Configure secrets and environment variables via GitHub Secrets for Codespaces or Actions.
-- Add tests and CI workflows.
+## Routes (all under `/api`)
 
-If you'd like, I can create the initial files, provide push commands, or scaffold a minimal service.
----
-- provide exact push commands and a Codespace devcontainer tuned to your language, or
+- `POST /auth/register`, `POST /auth/login`, `POST /auth/logout` — login/register are open; logout clears the cookie.
+- `GET /auth/me` — needs auth.
+- `GET /users`, `POST /users`, `PATCH /users/:id` — admin.
+- `GET /finance/records`, `GET /finance/records/:id` — analyst or admin. Query: `type`, `category`, `dateFrom`, `dateTo`, `page`, `limit`.
+- `POST/PATCH/DELETE /finance/records` — admin.
+- `GET /dashboard/summary` — any role; optional `dateFrom`, `dateTo`, `trend` (`month` or `week`).
+
+## Examples
+
+```http
+POST /api/auth/register
+Content-Type: application/json
+
+{"email":"you@example.com","password":"yourpassword","name":"You"}
+```
+
+```http
+POST /api/finance/records
+Cookie: token=<jwt>
+Content-Type: application/json
+
+{"amount":120.5,"type":"income","category":"salary","date":"2026-04-01","notes":"April"}
+```
+
+Don’t commit `.env`.

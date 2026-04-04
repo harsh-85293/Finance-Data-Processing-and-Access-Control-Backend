@@ -1,14 +1,15 @@
 {
-  "name": "Finance Backend Codespace",
-  "image": "mcr.microsoft.com/devcontainers/base:0-focal",
-  "extensions": [
-    "ms-python.python",
-    "ms-azuretools.vscode-docker",
-    "eamodio.gitlens"
-  ],
-  "settings": {
-    "terminal.integrated.shell.linux": "/bin/bash"
+  "name": "zorvyn-backend",
+  "image": "mcr.microsoft.com/devcontainers/javascript-node:1-20-bookworm",
+  "features": {},
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "dbaeumer.vscode-eslint",
+        "eamodio.gitlens"
+      ]
+    }
   },
-  "postCreateCommand": "echo 'Devcontainer ready'",
-  "remoteUser": "vscode"
+  "postCreateCommand": "cd financedashboardbackend && npm install",
+  "remoteUser": "node"
 }
