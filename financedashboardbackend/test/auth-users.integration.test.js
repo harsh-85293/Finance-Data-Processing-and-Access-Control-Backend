@@ -14,6 +14,7 @@ let mongoServer;
 let app;
 
 before(async () => {
+  process.env.NODE_ENV = "test";
   mongoServer = await MongoMemoryServer.create();
   process.env.MONGODB_URI = mongoServer.getUri();
   process.env.JWT_SECRET = "test-jwt-secret-for-automated-tests";
@@ -97,6 +98,25 @@ test("POST /api/users as admin sets role on new user", async () => {
     .expect(201);
 
   assert.strictEqual(res.body.user.role, "analyst");
+});
+
+test("POST /api/auth/register returns 409 when email already exists", async () => {
+  await User.create({
+    email: "taken@test.com",
+    passwordHash: await User.hashPassword("password123!"),
+    name: "Taken",
+    role: "viewer",
+    status: "active",
+  });
+
+  await request(app)
+    .post("/api/auth/register")
+    .send({
+      email: "taken@test.com",
+      password: "password123!",
+      name: "Dup",
+    })
+    .expect(409);
 });
 
 test("POST /api/users as viewer returns 403", async () => {

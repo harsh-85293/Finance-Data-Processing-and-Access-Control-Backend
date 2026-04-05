@@ -2,6 +2,8 @@
 
 This document summarizes **high-level design (HLD)**, **low-level design (LLD)**, **workflows**, **requirements**, and **features** for this repository. It reflects the current Express + MongoDB implementation.
 
+The [README](../README.md) has a short request-flow overview, RBAC table, and HTTP status list. [openapi.yaml](openapi.yaml) lists example paths.
+
 ---
 
 ## 1. Product features (what the system does)

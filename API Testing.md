@@ -329,7 +329,7 @@ Missing id / bad id → **400** or **404**.
 
 ## 7. Optional enhancements — how to test in Postman
 
-This section lines up with **[requirements coverage](../docs/requirements-coverage.md)**. Everything here is **Postman** (or optional Collection Runner). For **terminal / automated** tests, see **§9**.
+Optional features from the **[feature checklist](../docs/feature-checklist.md)** — tested here with **Postman** (or Collection Runner). Automated tests: **§9**.
 
 **Images:** Placeholders use empty `src=""`. Put your files under `api-testing-images/` (or elsewhere) and set each `src` to your path, e.g. `api-testing-images/your-screenshot.png`.
 

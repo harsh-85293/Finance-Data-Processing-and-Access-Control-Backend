@@ -2,36 +2,104 @@
 
 Express + MongoDB API for a small finance dashboard: JWT auth, role-based access, and aggregated summaries. The app itself lives in `financedashboardbackend/`; there’s a root `package.json` with npm workspaces so `node_modules` lines up for local dev and for Vercel. The Vercel entry is `api/index.js` — it wraps the same Express app with `serverless-http`.
 
-You’ll need Node 18+ (CI runs on 20), MongoDB somewhere the process can reach, and **npm** — there’s a `package-lock.json`, I didn’t set this up for Yarn.
+You’ll need Node 18+, MongoDB the app can reach, and **npm** (there’s a `package-lock.json` at the repo root).
 
-## Documentation
-
-- **[System design](docs/system-design.md)** — HLD/LLD, workflows, functional and non-functional requirements, features, and where SOLID is applied (service layer under `financedashboardbackend/src/services/`, thin route adapters, mappers).
-- **[Requirements coverage](docs/requirements-coverage.md)** — How core features and optional extras are implemented (traceability for operators and reviewers).
-- **[API Testing Using Postman](API%20Testing.md)** — Manual testing walkthrough (Postman-style); screenshots live in [`api-testing-images/`](api-testing-images/).
-
-## Running it locally
-
-From the **repo root**:
+## Quick start
 
 ```bash
+git clone <repo-url>
+cd <repo-directory>
 npm install
 cp financedashboardbackend/.env.example financedashboardbackend/.env
 ```
 
-Fill in `financedashboardbackend/.env`. You **must** set `MONGODB_URI` and `JWT_SECRET` (use a long random secret in prod). Optional: `PORT` (defaults to 4000), `JWT_EXPIRES_IN` (defaults to 7d), `CLIENT_ORIGIN` if your frontend isn’t covered by the built-in CORS list. For local dev, `localhost:3000` / `127.0.0.1:3000` are already allowed; on Vercel, `VERCEL_URL` gets added automatically.
+Edit `financedashboardbackend/.env`: set **`MONGODB_URI`** and **`JWT_SECRET`** (long random string in production).
+
+```bash
+npm test -w financedashboardbackend
+npm run dev -w financedashboardbackend
+```
+
+Open `GET http://localhost:4000/api/health` — expect `{ "ok": true }`.
+
+## Architecture (request flow)
+
+```text
+HTTP client
+  → Express (financedashboardbackend/src/app.js)
+  → cors, json, cookie-parser
+  → connectDb (MongoDB)
+  → /api route → middleware (requireAuth, requireRoles)
+  → route handler → service (validation + business rules)
+  → Mongoose model → JSON response
+```
+
+- **Routes** (`src/routes/`) — HTTP only: parse input, call services, map status/body.  
+- **Services** (`src/services/`) — Rules, validation orchestration, queries/aggregations.  
+- **Models** (`src/models/`) — Schemas and indexes.  
+- **Mappers** (`src/mappers/`) — Stable API shapes (e.g. finance records).
+
+More detail: **[system design](docs/system-design.md)**.
+
+## RBAC matrix (simplified)
+
+| Area | viewer | analyst | admin |
+|------|:------:|:-------:|:-----:|
+| `GET /api/dashboard/summary` | ✓ | ✓ | ✓ |
+| `GET /api/finance/records`, `GET .../:id` | ✗ | ✓ | ✓ |
+| `POST` / `PATCH` / `DELETE /api/finance/records` | ✗ | ✗ | ✓ |
+| `/api/users/*` | ✗ | ✗ | ✓ |
+| `POST /api/auth/register`, `POST /api/auth/login`, … | ✓ | ✓ | ✓ |
+
+Inactive users receive **403** on protected routes.
+
+## HTTP status codes (common)
+
+| Code | When |
+|------|------|
+| **200** | Success |
+| **201** | Created |
+| **400** | Validation / bad input (often `details`) |
+| **401** | Missing or invalid JWT |
+| **403** | Wrong role or inactive account |
+| **404** | Resource not found |
+| **409** | Conflict (e.g. duplicate email) |
+| **429** | Rate limit exceeded |
+| **500** | Unexpected server error |
+
+## Security notes
+
+- **Passwords:** stored as **bcrypt** hashes; never returned in API JSON.  
+- **JWT:** signed with **`JWT_SECRET`**; optional **`Authorization: Bearer`** and httpOnly cookie **`token`**. Stateless — no server-side session store.  
+- **Rate limiting:** per IP on `/api/auth` and other protected `/api` groups (off when `NODE_ENV=test`).  
+- **Secrets:** do not commit **`financedashboardbackend/.env`**; copy from **`.env.example`**.
+
+## Finance soft delete
+
+Deletes set **`deletedAt`** instead of removing documents, so rows stay auditable in MongoDB while lists, get-by-id, updates, and dashboard aggregates only include **`deletedAt: null`** records.
+
+## Documentation
+
+- **[System design](docs/system-design.md)** — Architecture, flows, and data model.  
+- **[Feature checklist](docs/feature-checklist.md)** — What’s implemented, in table form.  
+- **[openapi.yaml](docs/openapi.yaml)** — OpenAPI sketch for the main routes.  
+- **[API Testing](API%20Testing.md)** — Postman walkthrough; images in [`api-testing-images/`](api-testing-images/).
+
+## Running it locally
+
+After the [Quick start](#quick-start) steps: set `MONGODB_URI` and `JWT_SECRET` in `financedashboardbackend/.env`. Optional: `PORT` (default 4000), `JWT_EXPIRES_IN` (default 7d), `CLIENT_ORIGIN` for extra CORS origins. Local `localhost:3000` / `127.0.0.1:3000` are allowed by default; on Vercel, `VERCEL_URL` is added for CORS.
 
 ```bash
 npm run dev -w financedashboardbackend
 ```
 
-Hit `GET /api/health` — you should see `{ "ok": true }`. Run tests (they spin up an in-memory MongoDB; no local Mongo required):
+`GET /api/health` should return `{ "ok": true }`. Tests use an in-memory MongoDB:
 
 ```bash
 npm test -w financedashboardbackend
 ```
 
-For a normal long-running server (same env):
+Production-style process (same env):
 
 ```bash
 npm start -w financedashboardbackend

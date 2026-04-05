@@ -79,3 +79,113 @@ test("DELETE soft-deletes record; GET returns 404; dashboard excludes it", async
 
   assert.strictEqual(dash.body.summary.totalIncome, 0);
 });
+
+test("GET /api/finance/records returns 403 for viewer", async () => {
+  const viewer = await User.create({
+    email: "viewer-fin@test.com",
+    passwordHash: await User.hashPassword("password123!"),
+    name: "Viewer",
+    role: "viewer",
+    status: "active",
+  });
+
+  const token = signUserToken(viewer.id);
+
+  await request(app)
+    .get("/api/finance/records")
+    .set("Authorization", `Bearer ${token}`)
+    .expect(403);
+});
+
+test("GET /api/finance/records filters by type", async () => {
+  const admin = await User.create({
+    email: "admin-filter@test.com",
+    passwordHash: await User.hashPassword("password123!"),
+    name: "Admin",
+    role: "admin",
+    status: "active",
+  });
+
+  const token = signUserToken(admin.id);
+
+  await request(app)
+    .post("/api/finance/records")
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      amount: 10,
+      type: "income",
+      category: "a",
+      date: "2026-04-01",
+      notes: "",
+    })
+    .expect(201);
+
+  await request(app)
+    .post("/api/finance/records")
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      amount: 5,
+      type: "expense",
+      category: "b",
+      date: "2026-04-02",
+      notes: "",
+    })
+    .expect(201);
+
+  const res = await request(app)
+    .get("/api/finance/records?type=income")
+    .set("Authorization", `Bearer ${token}`)
+    .expect(200);
+
+  assert.strictEqual(res.body.data.length, 1);
+  assert.strictEqual(res.body.data[0].type, "income");
+});
+
+test("POST /api/finance/records returns 400 for invalid amount", async () => {
+  const admin = await User.create({
+    email: "admin-val@test.com",
+    passwordHash: await User.hashPassword("password123!"),
+    name: "Admin",
+    role: "admin",
+    status: "active",
+  });
+
+  const token = signUserToken(admin.id);
+
+  const res = await request(app)
+    .post("/api/finance/records")
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      amount: -1,
+      type: "income",
+      category: "x",
+      date: "2026-04-01",
+    })
+    .expect(400);
+
+  assert.ok(res.body.message);
+});
+
+test("GET /api/dashboard/summary returns summary shape", async () => {
+  const admin = await User.create({
+    email: "admin-dash@test.com",
+    passwordHash: await User.hashPassword("password123!"),
+    name: "Admin",
+    role: "admin",
+    status: "active",
+  });
+
+  const token = signUserToken(admin.id);
+
+  const res = await request(app)
+    .get("/api/dashboard/summary")
+    .set("Authorization", `Bearer ${token}`)
+    .expect(200);
+
+  assert.ok("totalIncome" in res.body.summary);
+  assert.ok("totalExpense" in res.body.summary);
+  assert.ok("netBalance" in res.body.summary);
+  assert.ok(Array.isArray(res.body.categoryTotals));
+  assert.ok(Array.isArray(res.body.recentActivity));
+  assert.ok(res.body.trends && res.body.trends.buckets);
+});

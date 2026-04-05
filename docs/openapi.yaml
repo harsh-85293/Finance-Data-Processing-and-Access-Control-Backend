@@ -1,0 +1,188 @@
+openapi: 3.0.3
+info:
+  title: Finance dashboard API
+  description: |
+    Main routes only. Behaviour, auth, and examples: see README and API Testing.md.
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:4000
+    description: Local development
+  - url: https://{host}
+    description: Deployed (set host)
+    variables:
+      host:
+        default: api.example.com
+
+tags:
+  - name: Health
+  - name: Auth
+  - name: Finance
+  - name: Dashboard
+
+paths:
+  /api/health:
+    get:
+      tags: [Health]
+      summary: Liveness check (no database required)
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                    example: true
+
+  /api/auth/register:
+    post:
+      tags: [Auth]
+      summary: Register (first user becomes admin on empty DB)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterBody"
+      responses:
+        "201":
+          description: Created
+        "400":
+          description: Validation error
+        "409":
+          description: Email already registered
+
+  /api/auth/login:
+    post:
+      tags: [Auth]
+      summary: Login (sets httpOnly cookie `token`)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+      responses:
+        "200":
+          description: OK
+        "401":
+          description: Invalid credentials
+
+  /api/finance/records:
+    get:
+      tags: [Finance]
+      summary: List records (analyst or admin)
+      security: [{ bearerAuth: [] }, { cookieAuth: [] }]
+      parameters:
+        - name: page
+          in: query
+          schema: { type: integer, minimum: 1 }
+        - name: limit
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 100 }
+        - name: type
+          in: query
+          schema: { type: string, enum: [income, expense] }
+        - name: category
+          in: query
+          schema: { type: string }
+        - name: dateFrom
+          in: query
+          schema: { type: string, format: date }
+        - name: dateTo
+          in: query
+          schema: { type: string, format: date }
+      responses:
+        "200":
+          description: Paginated list
+        "403":
+          description: Insufficient role
+    post:
+      tags: [Finance]
+      summary: Create record (admin only)
+      security: [{ bearerAuth: [] }, { cookieAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FinanceRecordBody"
+      responses:
+        "201":
+          description: Created
+        "400":
+          description: Validation error
+        "403":
+          description: Not admin
+
+  /api/dashboard/summary:
+    get:
+      tags: [Dashboard]
+      summary: Aggregated dashboard data (all authenticated roles)
+      security: [{ bearerAuth: [] }, { cookieAuth: [] }]
+      parameters:
+        - name: dateFrom
+          in: query
+          schema: { type: string, format: date }
+        - name: dateTo
+          in: query
+          schema: { type: string, format: date }
+        - name: trend
+          in: query
+          schema: { type: string, enum: [month, week] }
+      responses:
+        "200":
+          description: Summary, category totals, recent activity, trends
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: token
+
+  schemas:
+    RegisterBody:
+      type: object
+      required: [email, password, name]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 1
+        name:
+          type: string
+
+    FinanceRecordBody:
+      type: object
+      required: [amount, type, category, date]
+      properties:
+        amount:
+          type: number
+          minimum: 0
+        type:
+          type: string
+          enum: [income, expense]
+        category:
+          type: string
+        date:
+          type: string
+          format: date
+        notes:
+          type: string
