@@ -7,7 +7,11 @@
   "scripts": {
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
-    "test": "node --test --test-concurrency=1 test"
+    "test": "node --test --test-concurrency=1 test",
+    "lint": "cd .. && eslint --max-warnings 0 financedashboardbackend/src financedashboardbackend/test api/index.js",
+    "lint:fix": "cd .. && eslint --max-warnings 0 financedashboardbackend/src financedashboardbackend/test api/index.js --fix",
+    "format": "prettier --write \"src/**/*.js\" \"test/**/*.js\" \"../api/index.js\"",
+    "format:check": "prettier --check \"src/**/*.js\" \"test/**/*.js\" \"../api/index.js\""
   },
   "engines": {
     "node": ">=18"
@@ -24,8 +28,13 @@
     "serverless-http": "^3.2.0"
   },
   "devDependencies": {
+    "@eslint/js": "^9.16.0",
+    "eslint": "^9.16.0",
+    "eslint-config-prettier": "^9.1.0",
+    "globals": "^15.13.0",
     "mongodb-memory-server": "^10.4.3",
     "nodemon": "^3.1.7",
+    "prettier": "^3.4.2",
     "supertest": "^7.0.0"
   }
 }

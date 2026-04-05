@@ -1,14 +1,9 @@
 const express = require("express");
 const { requireAuth } = require("../middlewares/auth");
 const { asyncHandler } = require("../utils/asyncHandler");
-const {
-  validateEmail,
-  validatePassword,
-  collectFieldErrors,
-} = require("../utils/validation");
+const { validateEmail, validatePassword, collectFieldErrors } = require("../utils/validation");
 const { setAuthCookie, clearAuthCookie } = require("../utils/token");
 const { registerUser, loginUser } = require("../services/auth.service");
-const { sendServiceResult } = require("../services/httpResult");
 
 const router = express.Router();
 
@@ -17,8 +12,7 @@ router.post(
   asyncHandler(async (req, res) => {
     const emailResult = validateEmail(req.body.email);
     const passwordResult = validatePassword(req.body.password);
-    const name =
-      typeof req.body.name === "string" ? req.body.name.trim().slice(0, 120) : "";
+    const name = typeof req.body.name === "string" ? req.body.name.trim().slice(0, 120) : "";
     const errs = collectFieldErrors([emailResult, passwordResult]);
     if (errs) {
       return res.status(400).json({ message: "Validation failed", details: errs });

@@ -1,6 +1,10 @@
 const { FinancialRecord } = require("../models/financialRecord");
 const { ok, fail } = require("./httpResult");
-const { parseOptionalDateRange, validateTrendGranularity, collectFieldErrors } = require("../utils/validation");
+const {
+  parseOptionalDateRange,
+  validateTrendGranularity,
+  collectFieldErrors,
+} = require("../utils/validation");
 
 function formatRecent(doc) {
   return {

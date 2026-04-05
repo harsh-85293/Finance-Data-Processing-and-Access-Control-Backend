@@ -161,6 +161,13 @@ Note: `GET /api/health` is registered **before** the global `connectDb` middlewa
 
 ### 5.3 Database design
 
+**Why MongoDB for this project**
+
+- **Document model** fits finance rows as self-contained documents (amount, type, category, date, notes) without rigid joins for every read.  
+- **Aggregation pipeline** matches how the dashboard computes totals, category breakdowns, and trends in one round-trip to the database.  
+- **Iteration cost** is low when fields evolve (e.g. adding `deletedAt` for soft delete) compared to relational migrations for a small codebase.  
+- Scope is a **single-tenant** dataset (see NFR-3); sharding and multi-region are out of scope here.
+
 **Connection**
 
 - Single MongoDB deployment; database name comes from **`MONGODB_URI`** (e.g. path `/finance_dashboard` in the URI picks that database).
@@ -203,6 +210,7 @@ erDiagram
     date date
     string notes
     ObjectId createdBy FK
+    date deletedAt "null = active"
     date createdAt
     date updatedAt
   }
@@ -236,17 +244,35 @@ erDiagram
 
 **Indexes declared in code** (`financialRecord.js`)
 
-| Index | Purpose |
-|-------|---------|
-| `{ deletedAt: 1 }` | Filter active rows (`deletedAt: null`). |
-| `{ date: -1 }` | Sort/filter lists and dashboards by date (newest first). |
-| `{ category: 1 }` | Filter/group by category. |
-| `{ type: 1 }` | Filter by income vs expense. |
-| `{ createdBy: 1 }` | Look up records by author (if used). |
+| Index | Rationale | Typical query |
+|-------|-----------|----------------|
+| `{ deletedAt: 1 }` | Almost every read scopes to **active** rows. | `find({ deletedAt: null, … })` |
+| `{ date: -1 }` | List and recent-activity paths sort by **business date** descending. | `find(…).sort({ date: -1 })` |
+| `{ category: 1 }` | Exact category filter (case-insensitive regex in app). | `find({ category: … })` |
+| `{ type: 1 }` | Filter **income** vs **expense**. | `find({ type: … })` |
+| `{ createdBy: 1 }` | Optional “by author” or cleanup if users are removed later. | `find({ createdBy: … })` |
+| `{ deletedAt: 1, date: -1 }` | **Compound:** active rows in a date window, sorted by date (list + dashboard `$match` + sort). | Active-only lists and time-range dashboards |
+
+MongoDB can use the compound index when the query filters on `deletedAt` and sorts or ranges on `date`. Single-field indexes remain useful when only one predicate is selective.
 
 **Other indexes**
 
 - **`users.email`:** uniqueness enforced via schema `unique: true` (MongoDB unique index).
+
+**Consistency rules (enforced in schema + app)**
+
+| Rule | Where |
+|------|--------|
+| Unique login identity | `users.email` unique index + lowercase trim on write. |
+| No negative amounts | `amount` `min: 0` on `FinancialRecord`. |
+| Closed enums | `role`, `status`, `type` via Mongoose `enum`. |
+| Soft delete visibility | All list/get/update/dashboard paths add **`deletedAt: null`** (or equivalent) so deleted docs disappear from API semantics. |
+| `createdBy` validity | Not a DB foreign key; set from authenticated user id on create, not raw client input. |
+
+**Schema changes and existing documents**
+
+- Adding **`deletedAt`** did not require backfilling: queries use **`{ deletedAt: null }`**, which in MongoDB matches documents where the field is **missing** or explicitly **`null`**, so older rows without the field still behave as active.  
+- New optional fields should follow the same pattern (default `null` / sensible default) to avoid one-off migrations for small deployments.
 
 **Not modeled in DB**
 

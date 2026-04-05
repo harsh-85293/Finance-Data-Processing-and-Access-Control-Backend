@@ -4,5 +4,11 @@
   "workspaces": ["financedashboardbackend"],
   "engines": {
     "node": ">=18"
+  },
+  "scripts": {
+    "lint": "npm run lint -w financedashboardbackend",
+    "lint:fix": "npm run lint:fix -w financedashboardbackend",
+    "format": "npm run format -w financedashboardbackend",
+    "format:check": "npm run format:check -w financedashboardbackend"
   }
 }

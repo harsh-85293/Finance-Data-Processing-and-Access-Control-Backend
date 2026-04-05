@@ -52,8 +52,7 @@ router.post(
     const emailResult = validateEmail(req.body.email);
     const passwordResult = validatePassword(req.body.password);
     const roleResult = validateRole(req.body.role, { required: true });
-    const name =
-      typeof req.body.name === "string" ? req.body.name.trim().slice(0, 120) : "";
+    const name = typeof req.body.name === "string" ? req.body.name.trim().slice(0, 120) : "";
     const errs = collectFieldErrors([emailResult, passwordResult, roleResult]);
     if (errs) {
       return res.status(400).json({ message: "Validation failed", details: errs });

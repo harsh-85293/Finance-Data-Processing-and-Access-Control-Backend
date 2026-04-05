@@ -24,10 +24,7 @@ function buildListFilter({ typeFilter, categoryFilter, rangeResult }) {
     filter.type = typeFilter;
   }
   if (categoryFilter) {
-    filter.category = new RegExp(
-      `^${categoryFilter.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`,
-      "i"
-    );
+    filter.category = new RegExp(`^${categoryFilter.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`, "i");
   }
   const { from, to } = rangeResult.value;
   if (from || to) {
@@ -51,8 +48,7 @@ async function listRecords(query) {
     });
   }
 
-  const categoryFilter =
-    typeof query.category === "string" ? query.category.trim() : "";
+  const categoryFilter = typeof query.category === "string" ? query.category.trim() : "";
   const rangeResult = parseOptionalDateRange(query.dateFrom, query.dateTo);
   if (!rangeResult.ok) {
     return fail(400, { message: "Validation failed", details: [rangeResult.error] });
@@ -71,9 +67,7 @@ async function listRecords(query) {
     return fail(400, { message: "Validation failed", details: errs });
   }
 
-  const filter = activeRecordFilter(
-    buildListFilter({ typeFilter, categoryFilter, rangeResult })
-  );
+  const filter = activeRecordFilter(buildListFilter({ typeFilter, categoryFilter, rangeResult }));
   const page = pageResult.value;
   const limit = limitResult.value;
   const skip = (page - 1) * limit;

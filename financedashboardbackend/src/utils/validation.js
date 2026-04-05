@@ -93,8 +93,7 @@ function validateRole(role, { required } = {}) {
     }
     return { ok: true, value: undefined };
   }
-  const normalized =
-    typeof role === "string" ? role.trim().toLowerCase() : role;
+  const normalized = typeof role === "string" ? role.trim().toLowerCase() : role;
   if (!ALLOWED_ROLES.has(normalized)) {
     return {
       ok: false,

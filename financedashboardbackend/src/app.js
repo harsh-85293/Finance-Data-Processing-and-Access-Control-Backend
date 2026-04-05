@@ -16,10 +16,7 @@ if (process.env.TRUST_PROXY === "1" || process.env.VERCEL) {
   app.set("trust proxy", 1);
 }
 
-const allowedOrigins = new Set([
-  "http://localhost:3000",
-  "http://127.0.0.1:3000",
-]);
+const allowedOrigins = new Set(["http://localhost:3000", "http://127.0.0.1:3000"]);
 if (process.env.CLIENT_ORIGIN) {
   allowedOrigins.add(process.env.CLIENT_ORIGIN.trim());
 }

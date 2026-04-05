@@ -10,6 +10,7 @@ async function connectDb() {
   }
   mongoose.set("strictQuery", true);
   await mongoose.connect(uri);
+  // eslint-disable-next-line no-console -- startup confirmation
   console.log("MongoDB connected");
 }
 

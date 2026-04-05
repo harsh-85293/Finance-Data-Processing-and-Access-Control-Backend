@@ -22,6 +22,18 @@ npm run dev -w financedashboardbackend
 
 Open `GET http://localhost:4000/api/health` — expect `{ "ok": true }`.
 
+## Development (lint & format)
+
+ESLint and Prettier are configured for the backend workspace and `api/index.js`. From the repo root:
+
+```bash
+npm run lint
+npm run format:check
+npm run format
+```
+
+CI runs `lint` and `format:check` before tests.
+
 ## Architecture (request flow)
 
 ```text
@@ -77,6 +89,10 @@ Inactive users receive **403** on protected routes.
 ## Finance soft delete
 
 Deletes set **`deletedAt`** instead of removing documents, so rows stay auditable in MongoDB while lists, get-by-id, updates, and dashboard aggregates only include **`deletedAt: null`** records.
+
+## Database (modeling)
+
+MongoDB + Mongoose: **`users`** and **`financialrecords`**, with indexes for list filters, soft delete, and dashboard-style queries. Rationale (why MongoDB, indexes, integrity rules, soft-delete behaviour) is in **[system design](docs/system-design.md)** under **Database design**.
 
 ## Documentation
 

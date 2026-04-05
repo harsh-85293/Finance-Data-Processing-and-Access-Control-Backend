@@ -38,6 +38,8 @@ financialRecordSchema.index({ date: -1 });
 financialRecordSchema.index({ category: 1 });
 financialRecordSchema.index({ type: 1 });
 financialRecordSchema.index({ createdBy: 1 });
+// List + dashboard: active rows in a date range, sorted by date (see system-design.md).
+financialRecordSchema.index({ deletedAt: 1, date: -1 });
 
 module.exports = {
   FinancialRecord: mongoose.model("FinancialRecord", financialRecordSchema),

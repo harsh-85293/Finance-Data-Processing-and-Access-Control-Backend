@@ -19,6 +19,7 @@ async function main() {
     process.exit(1);
   });
   server.listen(port, () => {
+    // eslint-disable-next-line no-console -- startup confirmation
     console.log(`Listening on ${port}`);
   });
 }

@@ -22,11 +22,7 @@ function canWriteRecords(user) {
 }
 
 function canViewSummary(user) {
-  return (
-    user.role === ROLES.VIEWER ||
-    user.role === ROLES.ANALYST ||
-    user.role === ROLES.ADMIN
-  );
+  return user.role === ROLES.VIEWER || user.role === ROLES.ANALYST || user.role === ROLES.ADMIN;
 }
 
 function canManageUsers(user) {
