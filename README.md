@@ -41,6 +41,7 @@ HTTP client
   → Express (financedashboardbackend/src/app.js)
   → X-Request-Id, cors, compression, json, cookie-parser
   → connectDb (MongoDB, pooled connection)
+  → optional Redis (if REDIS_URL): rate-limit store + dashboard cache
   → /api route → middleware (requireAuth, requireRoles)
   → route handler → service (validation + business rules)
   → Mongoose model → JSON response

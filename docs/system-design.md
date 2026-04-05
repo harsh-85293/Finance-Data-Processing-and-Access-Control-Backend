@@ -81,20 +81,25 @@ flowchart LR
   subgraph api [Backend]
     E[Express app]
   end
-  subgraph data [Data]
+  subgraph data [Data and optional cache]
     M[(MongoDB)]
+    R[(Redis optional)]
   end
   B -->|HTTPS JSON CORS cookies| E
   P -->|HTTP JSON Bearer| E
-  E --> M
+  E -->|Mongoose read/write| M
+  E -.->|if REDIS_URL: rate limits + dashboard cache| R
 ```
+
+**Diagram note:** **Redis** is **optional** (see **NFR-8**). If `REDIS_URL` is unset, the dashed link is unused: rate limits stay in-process and dashboard aggregations always hit MongoDB. Re-export any PNGs or slides from this Mermaid source after architecture changes so screenshots stay in sync.
 
 ### 4.2 Logical architecture
 
 - **API layer:** Express routers under `/api` (auth, users, finance, dashboard).
 - **Domain:** Users and financial records; role checks before business logic.
 - **Persistence:** Mongoose models + MongoDB (indexes on common query fields).
-- **Cross-cutting:** CORS allowlist, JSON parsing, cookie parsing, centralized error handling, DB connection middleware.
+- **Optional cache / coordination:** When `REDIS_URL` is set, **ioredis** backs shared **rate-limit** counters (`rate-limit-redis`) and a short-TTL **dashboard summary** cache (`dashboardCache.js`); finance writes bump cache generation.
+- **Cross-cutting:** CORS allowlist, JSON parsing, cookie parsing, compression, request IDs, centralized error handling, DB connection middleware.
 
 ### 4.3 Deployment views
 
@@ -113,7 +118,9 @@ flowchart LR
 financedashboardbackend/src/
 ├── app.js                 # Express app, middleware order, route mounting
 ├── server.js              # HTTP server + listen (non-serverless)
-├── config/db.js           # Mongoose connect + connection reuse
+├── config/
+│   ├── db.js              # Mongoose connect + pool options + disconnect
+│   └── redisClient.js     # Optional ioredis singleton when REDIS_URL is set
 ├── models/
 │   ├── user.js            # User schema, roles, bcrypt helpers, safe JSON
 │   └── financialRecord.js # Record schema, indexes
@@ -127,12 +134,15 @@ financedashboardbackend/src/
 │   ├── auth.service.js
 │   ├── user.service.js
 │   ├── finance.service.js
-│   └── dashboard.service.js
+│   ├── dashboard.service.js
+│   └── dashboardCache.js  # Optional Redis cache keys + invalidation for dashboard summary
 ├── mappers/
 │   └── financialRecord.mapper.js  # API DTO shape for records
 ├── middlewares/
 │   ├── auth.js
-│   └── authorize.js
+│   ├── authorize.js
+│   ├── rateLimit.js       # express-rate-limit; Redis store when REDIS_URL set
+│   └── requestId.js       # X-Request-Id
 └── utils/                 # validation, tokens, async handler
 ```
 
@@ -158,6 +168,8 @@ sequenceDiagram
   M->>H: handler
   H-->>C: JSON response
 ```
+
+On requests that hit **rate limits** or **dashboard summary** with `REDIS_URL` configured, Express may read/write **Redis** inside the rate-limit store and `dashboardCache` (not shown as separate lifelines to keep the diagram readable).
 
 Note: `GET /api/health` is registered **before** the global `connectDb` middleware in `app.js`, so liveness does not require MongoDB. **`GET /api/health/ready`** is mounted **after** `connectDb` and returns **503** if the driver is not connected—use for readiness/orchestrator probes. All other routes mounted after `connectDb` require a successful DB connection before route handlers run.
 
