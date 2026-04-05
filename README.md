@@ -60,6 +60,7 @@ HTTP client
 - **[System design](docs/system-design.md)** — HLD/LLD, workflows, data model (Mermaid in §4.1, §5.2).  
 - **[Feature checklist](docs/feature-checklist.md)** — Feature table.  
 - **[openapi.yaml](docs/openapi.yaml)** — Route sketch + cross-cutting behaviour.  
+- **[Postman (published)](https://documenter.getpostman.com/view/53758015/2sBXiqEU2C)** — browsable requests (Postman Documenter).  
 - **[API Testing](API%20Testing.md)** — Postman-style steps; `api-testing-images/` has screenshots.  
 - **`docs/images/`** — Atlas console (AWS), Compass PNGs under [Database (modeling)](#database-modeling), and Render HTTPS under [Deploying](#deploying).
 

@@ -9,7 +9,8 @@ This document describes the **HLD/LLD**, workflows, requirements, and key featur
 - **Section 5.2**
 
 For a quick overview, see the [README](../README.md).  
-For API route structure, see [openapi.yaml](openapi.yaml).
+For API route structure, see [openapi.yaml](openapi.yaml).  
+For a published Postman view of the API, see [Postman Documenter](https://documenter.getpostman.com/view/53758015/2sBXiqEU2C).
 
 ---
 

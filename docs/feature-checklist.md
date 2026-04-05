@@ -25,5 +25,5 @@ What the API does, in one place. For more details, see [system-design.md](system
 | Health | `GET /api/health` is a liveness check and does not require the database. `GET /api/health/ready` is a readiness check and requires MongoDB to be connected. |
 | Scalability / ops | The app supports pooled MongoDB connections (`MONGODB_*` env vars), gzip compression, `X-Request-Id`, graceful shutdown, and optional Redis for rate limits and dashboard caching. See [system-design](system-design.md) NFR-7 and NFR-8. |
 | Tests | Run tests with `npm test -w financedashboardbackend`. Tests use in-memory MongoDB. CI runs the same test command on push and pull request. |
-| API docs | API documentation is available in the README, system design, [API Testing](../API%20Testing.md), and [openapi.yaml](openapi.yaml). |
+| API docs | README, system design, [Postman Documenter](https://documenter.getpostman.com/view/53758015/2sBXiqEU2C), [API Testing](../API%20Testing.md), [openapi.yaml](openapi.yaml). |
 | Deployed API | The API is deployed over **HTTPS** on Render. The base URL is listed in [README Deploying](../README.md#deploying). |

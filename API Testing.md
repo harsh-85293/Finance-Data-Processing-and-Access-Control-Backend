@@ -1,5 +1,7 @@
 # API Testing
 
+**Published Postman documentation:** [documenter.getpostman.com — My Collection](https://documenter.getpostman.com/view/53758015/2sBXiqEU2C) (same API; use your own base URL and auth where needed).
+
 Postman screenshots live in **`api-testing-images/`**. Filenames use numbered prefixes (`01`–`20`) and describe the scenario (endpoint and typical status code where relevant), e.g. `01-api-health-check.png`, `10-finance-record-create-201.png`.
 
 ---
