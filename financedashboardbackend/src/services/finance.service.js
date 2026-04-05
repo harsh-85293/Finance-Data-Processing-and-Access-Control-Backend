@@ -195,7 +195,7 @@ async function deleteRecord(id) {
   if (!doc) {
     return fail(404, { message: "Record not found" });
   }
-  return ok(null, 204);
+  return ok({ message: "Deleted data successfully" }, 200);
 }
 
 module.exports = {
