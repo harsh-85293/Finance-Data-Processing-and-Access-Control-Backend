@@ -17,8 +17,8 @@ const dashboardRoutes = require("./routes/dashboard");
 
 const app = express();
 
-// So rate limiting and similar middleware see the real client IP behind Vercel / other reverse proxies.
-if (process.env.TRUST_PROXY === "1" || process.env.VERCEL) {
+// So rate limiting and similar middleware see the real client IP behind Render / other reverse proxies.
+if (process.env.TRUST_PROXY === "1" || process.env.RENDER === "true") {
   app.set("trust proxy", 1);
 }
 
@@ -26,8 +26,8 @@ const allowedOrigins = new Set(["http://localhost:3000", "http://127.0.0.1:3000"
 if (process.env.CLIENT_ORIGIN) {
   allowedOrigins.add(process.env.CLIENT_ORIGIN.trim());
 }
-if (process.env.VERCEL_URL) {
-  allowedOrigins.add(`https://${process.env.VERCEL_URL}`);
+if (process.env.RENDER_EXTERNAL_URL) {
+  allowedOrigins.add(process.env.RENDER_EXTERNAL_URL.trim().replace(/\/$/, ""));
 }
 
 app.use(requestId);

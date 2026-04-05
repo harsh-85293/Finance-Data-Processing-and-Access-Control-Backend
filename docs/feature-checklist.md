@@ -26,3 +26,4 @@ What the API implements, in one place. Details: [system-design.md](system-design
 | Scalability / ops | Pooled MongoDB (`MONGODB_*` env), gzip compression, `X-Request-Id`, graceful shutdown, optional Redis (rate limits + dashboard cache) — see [system-design](system-design.md) NFR-7, NFR-8. |
 | Tests | `npm test -w financedashboardbackend` (in-memory Mongo). CI runs the same on push/PR. |
 | API docs | README, system design, [API Testing](../API%20Testing.md), [openapi.yaml](openapi.yaml). |
+| Deployed API | **HTTPS** on Render — base URL in [README Deploying](../README.md#deploying). |

@@ -2,7 +2,7 @@
 - Backend API's for finance dashboard are build using ExpressJS and NodeJS over Mongo DB, the API's focus on JWT auth, role-based access, and aggregated summaries.
 - The API's are written in the directory 'financedashboardbackend/`.
 - The repo's packages are written in `package.json` so installs work locally and on Render.
-- Serverless entry is `api/index.js` wrapping the same app with `serverless-http`.
+- Production uses a **Render** Web Service (`npm start`); optional `api/index.js` + `serverless-http` exists for other hosts.
 - This project requires Node 18+, a MongoDB URI, and npm (root `package-lock.json`).
 
 - Clone for Finance Data Processing and Access Control Backend.
@@ -61,7 +61,7 @@ HTTP client
 - **[Feature checklist](docs/feature-checklist.md)** — Feature table.  
 - **[openapi.yaml](docs/openapi.yaml)** — Route sketch + cross-cutting behaviour.  
 - **[API Testing](API%20Testing.md)** — Postman-style steps; `api-testing-images/` has screenshots.  
-- **`docs/images/`** — Atlas console (AWS) and Compass PNGs under [Database (modeling)](#database-modeling) below.
+- **`docs/images/`** — Atlas console (AWS), Compass PNGs under [Database (modeling)](#database-modeling), and Render HTTPS under [Deploying](#deploying).
 
 ## Operations:
 - The API is built with a few practical features to support reliability and performance:
@@ -113,7 +113,7 @@ Inactive users get **403** on protected routes.
 | Cookie scope | `httpOnly`, `secure` in prod, `SameSite` strict/lax, `path: '/'`. |
 | Leaking stack traces on 500 | Clients get a generic message; details go to server logs (with `X-Request-Id` when present). |
 | Brute force on auth | Stricter rate limit on `/api/auth`; optional Redis for shared counters. |
-| Wildcard CORS | Only listed origins (`localhost:3000`, `CLIENT_ORIGIN`, `RENDER_URL`). |
+| Wildcard CORS | Only listed origins (`localhost:3000`, `CLIENT_ORIGIN`, `RENDER_EXTERNAL_URL` on Render). |
 
 - Run **`npm audit`** yourself and set **`NODE_ENV=production`** on live servers.
 
@@ -160,6 +160,29 @@ npm start -w financedashboardbackend
 ```
 
 ## Deploying
+
+### Live API (Render, HTTPS)
+
+This project is deployed on **[Render](https://render.com)** with **TLS** (HTTPS). Base URL:
+
+**https://finance-data-processing-and-access-jega.onrender.com**
+
+| Check | URL | Typical response |
+|-------|-----|-------------------|
+| Root | `GET /` | `{ "ok": true, "health": "/api/health" }` |
+| Liveness | `GET /api/health` | `{ "ok": true }` (no DB required) |
+| Readiness | `GET /api/health/ready` | `{ "ok": true }` when MongoDB is connected |
+
+Example:
+
+```http
+GET https://finance-data-processing-and-access-jega.onrender.com/api/health
+```
+
+<img src="docs/images/render-deployment-https.png" alt="Browser: deployed API on Render over HTTPS" width="920" />
+
+### Deploy steps
+
 - On Render, deploy from the repo root using the `main` branch.
 - Set these environment variables: `MONGODB_URI`, `JWT_SECRET`, and optionally `CLIENT_ORIGIN` and `REDIS_URL`.
 - On other hosting platforms, run `npm ci` from the project root to install dependencies.
@@ -391,7 +414,7 @@ Single DB, single org. First signup bootstraps admin. Bcrypt passwords only, no 
 ## Tradeoffs
 - One auth story (cookie + optional Bearer) keeps browser and CLI clients simple; cookie `Secure`/`SameSite` must match how the frontend is hosted.
 - Mongo stays flexible; referential checks are in code.
-- Render uses the same app in serverless (cold starts).
+- Render Web Service may **cold-start** after idle; same codebase as local.
 - Workspace layout matches how Render installs.
 - Dashboard uses aggregations—fine at moderate size; indexes and optional Redis cache help.
 - Category filter is exact match (case-insensitive), not fuzzy search.

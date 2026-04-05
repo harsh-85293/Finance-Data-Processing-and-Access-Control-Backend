@@ -15,7 +15,7 @@ See the [README](../README.md) for a short overview and [openapi.yaml](openapi.y
 | **Users** | Admins list users (paginated), create users with a chosen role, update role/status/name. |
 | **Finance** | Financial records (income/expense) with amount, category, date, notes; list with filters and pagination; CRUD restricted by role. |
 | **Dashboard** | Aggregated summary: totals, by category, recent activity, monthly or weekly trends; date-range filters. |
-| **Deployment** | Long-running Node server (e.g. Render) **or** Vercel serverless via `api/index.js` + `serverless-http`. |
+| **Deployment** | Long-running Node on **Render** (Web Service); optional `api/index.js` + `serverless-http` for alternate hosts. |
 
 ---
 
@@ -60,9 +60,9 @@ See the [README](../README.md) for a short overview and [openapi.yaml](openapi.y
 | **NFR-1** | Security | Bcrypt passwords; JWT (HS256); httpOnly cookies in prod; min `JWT_SECRET` length in prod (`envValidate.js`); helmet + express-mongo-sanitize; generic 500 responses ([README](../README.md#security-hardening)). |
 | **NFR-2** | Security | Public registration cannot assign arbitrary admin (first-user bootstrap + admin-only user API). |
 | **NFR-3** | Data | Single shared dataset (no multi-tenant isolation in schema). |
-| **NFR-4** | Ops | Health endpoint for liveness; MongoDB connection reused per process / lazy on serverless. |
+| **NFR-4** | Ops | Health endpoint for liveness; MongoDB connection reused per process / lazy on cold start. |
 | **NFR-5** | Limits | JSON body size capped (e.g. 1mb); pagination upper bounds on list endpoints; per-IP rate limits on `/api` (auth vs general), disabled in `NODE_ENV=test`. |
-| **NFR-6** | Portability | Node 18+; same app runs locally, on PaaS, or Vercel functions with env-based config. |
+| **NFR-6** | Portability | Node 18+; same app runs locally, on **Render** or other PaaS, with env-based config. |
 | **NFR-7** | Scalability | Stateless HTTP + JWT; MongoDB pool size configurable (`MONGODB_*` env); response compression; `X-Request-Id` for tracing; `GET /api/health` (liveness) vs `GET /api/health/ready` (readiness); graceful shutdown closes HTTP then optional Redis then MongoDB on SIGTERM/SIGINT. |
 | **NFR-8** | Optional Redis | If **`REDIS_URL`** is set: `express-rate-limit` uses **`rate-limit-redis`** so limits are consistent across horizontally scaled Node processes; **`GET /api/dashboard/summary`** may return a cached JSON payload (TTL **`DASHBOARD_CACHE_TTL_SECONDS`**, default 60s); any finance record create/update/soft-delete **increments a generation key** so cached entries are not reused after data changes. If **`REDIS_URL`** is unset, limits stay in-memory and every dashboard request runs the aggregation (same as before). Tests and CI do not require Redis. **Apache Kafka** is not integrated—event streaming is out of scope for this codebase size. |
 
@@ -106,7 +106,9 @@ flowchart LR
 | Mode | Entry | Notes |
 |------|--------|--------|
 | **Node server** | `financedashboardbackend/src/server.js` | `connectDb` then `listen(PORT)`. |
-| **Vercel** | `api/index.js` → `serverless-http(app)` | Root `vercel.json` rewrites to `/api/index`; workspace install bundles backend. |
+| **Render (HTTPS)** | Same Node app on Render Web Service | Example production base URL: `https://finance-data-processing-and-access-jega.onrender.com` — see [README — Deploying](../README.md#deploying). |
+
+Optional **serverless-style** entry: repo root `api/index.js` wraps the app with `serverless-http` (for hosts that expect a function handler); **Render** uses the Node server entry above.
 
 ---
 

@@ -10,8 +10,10 @@ info:
 servers:
   - url: http://localhost:4000
     description: Local development
+  - url: https://finance-data-processing-and-access-jega.onrender.com
+    description: Production on Render (HTTPS)
   - url: https://{host}
-    description: Deployed (set host)
+    description: Other deployed host
     variables:
       host:
         default: api.example.com
