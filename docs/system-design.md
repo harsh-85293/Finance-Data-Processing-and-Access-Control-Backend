@@ -63,6 +63,8 @@ The [README](../README.md) has a short request-flow overview, RBAC table, and HT
 | **NFR-4** | Ops | Health endpoint for liveness; MongoDB connection reused per process / lazy on serverless. |
 | **NFR-5** | Limits | JSON body size capped (e.g. 1mb); pagination upper bounds on list endpoints; per-IP rate limits on `/api` (auth vs general), disabled in `NODE_ENV=test`. |
 | **NFR-6** | Portability | Node 18+; same app runs locally, on PaaS, or Vercel functions with env-based config. |
+| **NFR-7** | Scalability | Stateless HTTP + JWT; MongoDB pool size configurable (`MONGODB_*` env); response compression; `X-Request-Id` for tracing; `GET /api/health` (liveness) vs `GET /api/health/ready` (readiness); graceful shutdown closes HTTP then optional Redis then MongoDB on SIGTERM/SIGINT. |
+| **NFR-8** | Optional Redis | If **`REDIS_URL`** is set: `express-rate-limit` uses **`rate-limit-redis`** so limits are consistent across horizontally scaled Node processes; **`GET /api/dashboard/summary`** may return a cached JSON payload (TTL **`DASHBOARD_CACHE_TTL_SECONDS`**, default 60s); any finance record create/update/soft-delete **increments a generation key** so cached entries are not reused after data changes. If **`REDIS_URL`** is unset, limits stay in-memory and every dashboard request runs the aggregation (same as before). Tests and CI do not require Redis. **Apache Kafka** is not integrated—event streaming is out of scope for this codebase size. |
 
 ---
 
@@ -148,7 +150,7 @@ sequenceDiagram
   participant H as Handler
 
   C->>E: HTTP request
-  E->>E: cors, json, cookies
+  E->>E: request id, cors, compression, json, cookies
   E->>DB: await connectDb()
   DB-->>E: ok
   E->>R: /api/...
@@ -157,7 +159,7 @@ sequenceDiagram
   H-->>C: JSON response
 ```
 
-Note: `GET /api/health` is registered **before** the global `connectDb` middleware in `app.js`, so health does not require MongoDB. All routes mounted **after** that middleware require a successful DB connection before route handlers run.
+Note: `GET /api/health` is registered **before** the global `connectDb` middleware in `app.js`, so liveness does not require MongoDB. **`GET /api/health/ready`** is mounted **after** `connectDb` and returns **503** if the driver is not connected—use for readiness/orchestrator probes. All other routes mounted after `connectDb` require a successful DB connection before route handlers run.
 
 ### 5.3 Database design
 
@@ -172,6 +174,8 @@ Note: `GET /api/health` is registered **before** the global `connectDb` middlewa
 
 - Single MongoDB deployment; database name comes from **`MONGODB_URI`** (e.g. path `/finance_dashboard` in the URI picks that database).
 - Access via **Mongoose**; models map to collections as below.
+- **Pool sizing:** `MONGODB_MAX_POOL_SIZE` (default 10), `MONGODB_MIN_POOL_SIZE` (default 0), `MONGODB_SERVER_SELECTION_TIMEOUT_MS` (default 10000) tune concurrent connections and failover behaviour under load (see `.env.example`).
+- **Optional Redis:** when `REDIS_URL` is set, the app uses one shared **ioredis** client for rate-limit storage and dashboard summary cache keys (`financedash:*`). No Redis is required for correctness when the variable is omitted.
 
 **Collections (Mongoose defaults)**
 
@@ -252,12 +256,14 @@ erDiagram
 | `{ type: 1 }` | Filter **income** vs **expense**. | `find({ type: … })` |
 | `{ createdBy: 1 }` | Optional “by author” or cleanup if users are removed later. | `find({ createdBy: … })` |
 | `{ deletedAt: 1, date: -1 }` | **Compound:** active rows in a date window, sorted by date (list + dashboard `$match` + sort). | Active-only lists and time-range dashboards |
+| `{ deletedAt: 1, type: 1, date: -1 }` | **Compound:** active rows filtered by **type** and sorted by date (common list query). | `find({ deletedAt: null, type: … }).sort({ date: -1 })` |
 
 MongoDB can use the compound index when the query filters on `deletedAt` and sorts or ranges on `date`. Single-field indexes remain useful when only one predicate is selective.
 
 **Other indexes**
 
 - **`users.email`:** uniqueness enforced via schema `unique: true` (MongoDB unique index).
+- **`users.createdAt` (descending):** admin user list sorted by registration time (`User.find({}).sort({ createdAt: -1 })`).
 
 **Consistency rules (enforced in schema + app)**
 

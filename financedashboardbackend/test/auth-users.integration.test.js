@@ -38,6 +38,17 @@ test("GET /api/health", async () => {
   assert.strictEqual(res.body.ok, true);
 });
 
+test("GET /api/health/ready returns 200 when database is up", async () => {
+  const res = await request(app).get("/api/health/ready").expect(200);
+  assert.strictEqual(res.body.ok, true);
+  assert.strictEqual(res.body.db, "connected");
+});
+
+test("responses include X-Request-Id", async () => {
+  const res = await request(app).get("/api/health").expect(200);
+  assert.ok(res.headers["x-request-id"], "expected X-Request-Id header");
+});
+
 test("first POST /api/auth/register becomes admin", async () => {
   const res = await request(app)
     .post("/api/auth/register")

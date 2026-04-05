@@ -39,8 +39,8 @@ CI runs `lint` and `format:check` before tests.
 ```text
 HTTP client
   → Express (financedashboardbackend/src/app.js)
-  → cors, json, cookie-parser
-  → connectDb (MongoDB)
+  → X-Request-Id, cors, compression, json, cookie-parser
+  → connectDb (MongoDB, pooled connection)
   → /api route → middleware (requireAuth, requireRoles)
   → route handler → service (validation + business rules)
   → Mongoose model → JSON response
@@ -50,6 +50,8 @@ HTTP client
 - **Services** (`src/services/`) — Rules, validation orchestration, queries/aggregations.  
 - **Models** (`src/models/`) — Schemas and indexes.  
 - **Mappers** (`src/mappers/`) — Stable API shapes (e.g. finance records).
+
+**Scalability (operational):** Stateless JWT auth; configurable MongoDB pool (`MONGODB_MAX_POOL_SIZE` and related vars in `.env.example`); gzip **compression** on responses; **`X-Request-Id`** on every response for log correlation; **`GET /api/health`** for liveness (no DB) and **`GET /api/health/ready`** for readiness (DB connected); graceful shutdown (SIGTERM/SIGINT) closes HTTP, optional **Redis**, then MongoDB. **Optional Redis** (`REDIS_URL`): shared **rate-limit** state across multiple app instances and a short-TTL **cache** for dashboard summary (invalidated on finance create/update/delete). Omit Redis for local dev and CI—behaviour stays the same with in-memory limits and live aggregations. **Kafka** is not used here (would add heavy ops/CI cost for this scope). Details: **[system design](docs/system-design.md)** (NFR-7, NFR-8).
 
 More detail: **[system design](docs/system-design.md)**.
 

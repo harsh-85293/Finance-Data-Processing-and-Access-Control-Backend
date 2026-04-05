@@ -21,6 +21,8 @@ What the API implements, in one place. Details: [system-design.md](system-design
 | Pagination | `page` / `limit` on finance and user lists. |
 | “Search” | Filter by type, category, date — not full-text search ([tradeoffs](../README.md#tradeoffs-why-its-shaped-like-this)). |
 | Soft delete | `deletedAt` set on delete; excluded from reads and dashboard math. |
-| Rate limits | `express-rate-limit` on `/api/auth` and other `/api` groups; off when `NODE_ENV=test`. |
+| Rate limits | `express-rate-limit` on `/api/auth` and other `/api` groups; off when `NODE_ENV=test`. With `REDIS_URL`, limits use Redis for multi-instance deployments. |
+| Health | `GET /api/health` — liveness (no DB). `GET /api/health/ready` — readiness (MongoDB connected). |
+| Scalability / ops | Pooled MongoDB (`MONGODB_*` env), gzip compression, `X-Request-Id`, graceful shutdown, optional Redis (rate limits + dashboard cache) — see [system-design](system-design.md) NFR-7, NFR-8. |
 | Tests | `npm test -w financedashboardbackend` (in-memory Mongo). CI runs the same on push/PR. |
 | API docs | README, system design, [API Testing](../API%20Testing.md), [openapi.yaml](openapi.yaml). |

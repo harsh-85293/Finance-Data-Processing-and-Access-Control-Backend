@@ -1,5 +1,6 @@
 const { FinancialRecord } = require("../models/financialRecord");
 const { ok, fail } = require("./httpResult");
+const { getCachedSummaryPayload, setCachedSummaryPayload } = require("./dashboardCache");
 const {
   parseOptionalDateRange,
   validateTrendGranularity,
@@ -18,17 +19,7 @@ function formatRecent(doc) {
   };
 }
 
-async function getSummary(query) {
-  const rangeResult = parseOptionalDateRange(query.dateFrom, query.dateTo);
-  const trendResult = validateTrendGranularity(query.trend);
-  const errs = collectFieldErrors([rangeResult, trendResult]);
-  if (errs) {
-    return fail(400, { message: "Validation failed", details: errs });
-  }
-
-  const { from, to } = rangeResult.value;
-  const trend = trendResult.value;
-
+async function computeSummaryPayload(from, to, trend) {
   const match = { deletedAt: null };
   if (from || to) {
     match.date = {};
@@ -174,7 +165,7 @@ async function getSummary(query) {
       ? { granularity: "week", buckets: weeklyBuckets }
       : { granularity: "month", buckets: monthlyBuckets };
 
-  return ok({
+  return {
     summary: {
       totalIncome,
       totalExpense,
@@ -187,7 +178,28 @@ async function getSummary(query) {
       dateFrom: from || null,
       dateTo: to || null,
     },
-  });
+  };
+}
+
+async function getSummary(query) {
+  const rangeResult = parseOptionalDateRange(query.dateFrom, query.dateTo);
+  const trendResult = validateTrendGranularity(query.trend);
+  const errs = collectFieldErrors([rangeResult, trendResult]);
+  if (errs) {
+    return fail(400, { message: "Validation failed", details: errs });
+  }
+
+  const { from, to } = rangeResult.value;
+  const trend = trendResult.value;
+
+  const cached = await getCachedSummaryPayload(from, to, trend);
+  if (cached) {
+    return ok(cached);
+  }
+
+  const payload = await computeSummaryPayload(from, to, trend);
+  await setCachedSummaryPayload(from, to, trend, payload);
+  return ok(payload);
 }
 
 module.exports = { getSummary };

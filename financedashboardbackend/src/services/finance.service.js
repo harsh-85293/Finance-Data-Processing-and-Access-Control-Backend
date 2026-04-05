@@ -1,5 +1,6 @@
 const mongoose = require("mongoose");
 const { FinancialRecord, RECORD_TYPES } = require("../models/financialRecord");
+const { bumpDashboardCacheGeneration } = require("./dashboardCache");
 const { ok, fail } = require("./httpResult");
 const { toRecordJSON } = require("../mappers/financialRecord.mapper");
 const {
@@ -122,6 +123,7 @@ async function createRecord(body, createdByUserId) {
     createdBy: createdByUserId,
   });
 
+  await bumpDashboardCacheGeneration();
   return ok({ record: toRecordJSON(doc) }, 201);
 }
 
@@ -185,6 +187,7 @@ async function updateRecord(id, body) {
   if (notesResult.value !== undefined) doc.notes = notesResult.value;
 
   await doc.save();
+  await bumpDashboardCacheGeneration();
   return ok({ record: toRecordJSON(doc) });
 }
 
@@ -200,6 +203,7 @@ async function deleteRecord(id) {
   if (!doc) {
     return fail(404, { message: "Record not found" });
   }
+  await bumpDashboardCacheGeneration();
   return ok({ message: "Deleted data successfully" }, 200);
 }
 

@@ -1,8 +1,10 @@
 const express = require("express");
+const compression = require("compression");
 const cors = require("cors");
 const cookieParser = require("cookie-parser");
 
-const { connectDb } = require("./config/db");
+const { connectDb, isMongoConnected } = require("./config/db");
+const { requestId } = require("./middlewares/requestId");
 const { authLimiter, apiLimiter } = require("./middlewares/rateLimit");
 const authRoutes = require("./routes/auth");
 const usersRoutes = require("./routes/users");
@@ -24,6 +26,7 @@ if (process.env.VERCEL_URL) {
   allowedOrigins.add(`https://${process.env.VERCEL_URL}`);
 }
 
+app.use(requestId);
 app.use(
   cors({
     origin(origin, cb) {
@@ -38,6 +41,7 @@ app.use(
     credentials: true,
   })
 );
+app.use(compression());
 app.use(express.json({ limit: "1mb" }));
 app.use(cookieParser());
 
@@ -56,6 +60,13 @@ app.use(async (req, res, next) => {
   } catch (err) {
     next(err);
   }
+});
+
+app.get("/api/health/ready", (req, res) => {
+  if (!isMongoConnected()) {
+    return res.status(503).json({ ok: false, message: "Database not connected" });
+  }
+  return res.json({ ok: true, db: "connected" });
 });
 
 app.use("/api/auth", authLimiter, authRoutes);
@@ -79,7 +90,8 @@ app.use((err, req, res, _next) => {
   if (err && err.name === "CastError") {
     return res.status(400).json({ message: "Invalid id or value" });
   }
-  console.error(err);
+  const rid = req.requestId ? `[${req.requestId}] ` : "";
+  console.error(rid, err);
   return res.status(500).json({ message: "Internal server error" });
 });
 

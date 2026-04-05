@@ -1,7 +1,8 @@
 require("dotenv").config();
 const http = require("http");
 const app = require("./app");
-const { connectDb } = require("./config/db");
+const { connectDb, disconnectDb } = require("./config/db");
+const { closeRedisClient } = require("./config/redisClient");
 
 const port = Number(process.env.PORT) || 4000;
 
@@ -22,6 +23,24 @@ async function main() {
     // eslint-disable-next-line no-console -- startup confirmation
     console.log(`Listening on ${port}`);
   });
+
+  const shutdown = (signal) => {
+    // eslint-disable-next-line no-console -- ops signal
+    console.log(`${signal}: closing HTTP server…`);
+    server.close(async (closeErr) => {
+      if (closeErr) {
+        console.error(closeErr);
+        process.exit(1);
+      }
+      await closeRedisClient().catch(() => {});
+      await disconnectDb();
+      process.exit(0);
+    });
+    setTimeout(() => process.exit(1), 10_000).unref();
+  };
+
+  process.once("SIGTERM", () => shutdown("SIGTERM"));
+  process.once("SIGINT", () => shutdown("SIGINT"));
 }
 
 main().catch((err) => {

@@ -37,6 +37,27 @@ paths:
                     type: boolean
                     example: true
 
+  /api/health/ready:
+    get:
+      tags: [Health]
+      summary: Readiness check (requires MongoDB after connectDb middleware)
+      responses:
+        "200":
+          description: Database connected
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                    example: true
+                  db:
+                    type: string
+                    example: connected
+        "503":
+          description: Database not connected
+
   /api/auth/register:
     post:
       tags: [Auth]
