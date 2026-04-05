@@ -61,7 +61,7 @@ HTTP client
 - **[Feature checklist](docs/feature-checklist.md)** — Feature table.  
 - **[openapi.yaml](docs/openapi.yaml)** — Route sketch + cross-cutting behaviour.  
 - **[API Testing](API%20Testing.md)** — Postman-style steps; `api-testing-images/` has screenshots.  
-- **`docs/images/`** — Compass PNGs above.
+- **`docs/images/`** — Atlas console (AWS) and Compass PNGs under [Database (modeling)](#database-modeling) below.
 
 ## Operations:
 - The API is built with a few practical features to support reliability and performance:
@@ -128,9 +128,17 @@ Inactive users get **403** on protected routes.
 -Indexes are added to make filtering and dashboard queries faster.
 -More details are available in the **[system design](docs/system-design.md)**.
 
-### MongoDB Atlas + Compass (example)
-- Screenshots below are from **MongoDB Compass** against an **Atlas** cluster on **AWS** (not a local `mongod`).
-- Your URI and data will differ.
+### MongoDB Atlas on AWS (console)
+
+The database is hosted on **MongoDB Atlas** (cluster runs on **AWS**). Below: project overview for **`finance-dashboard-cluster`** and **Network Access** (IP allow list). Your project name, URI, and access rules may differ.
+
+<img src="docs/images/atlas-cluster-overview-aws.png" alt="MongoDB Atlas: cluster overview on AWS" width="920" />
+
+<img src="docs/images/atlas-network-access-ip-list.png" alt="MongoDB Atlas: IP access list" width="920" />
+
+### MongoDB Compass (example)
+
+Screenshots below are from **MongoDB Compass** connected to the same **Atlas** cluster (not a local `mongod`). Your URI and data will differ.
 
 <img src="docs/images/mongo-compass-users.png" alt="Compass: users" width="920" />
 

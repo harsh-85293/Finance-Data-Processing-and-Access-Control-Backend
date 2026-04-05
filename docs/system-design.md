@@ -194,7 +194,17 @@ If `REDIS_URL` is unset, the optional Redis step is skipped (in-memory limits, d
 - **Pool sizing:** `MONGODB_MAX_POOL_SIZE` (default 10), `MONGODB_MIN_POOL_SIZE` (default 0), `MONGODB_SERVER_SELECTION_TIMEOUT_MS` (default 10000) tune concurrent connections and failover behaviour under load (see `.env.example`).
 - **Optional Redis:** when `REDIS_URL` is set, the app uses one shared **ioredis** client for rate-limit storage and dashboard summary cache keys (`financedash:*`). No Redis is required for correctness when the variable is omitted.
 
-Compass screenshots (Atlas on AWS, not local): `docs/images/` — also in the [README](../README.md#mongodb-atlas--compass-example).
+**MongoDB Atlas on AWS (console)**
+
+The database is hosted on **MongoDB Atlas**; the cluster runs on **AWS**. Below: project overview (`finance-dashboard-cluster`) and **Network Access** (IP allow list). The same figures appear under [README — Database (modeling)](../README.md#database-modeling).
+
+![MongoDB Atlas: cluster overview on AWS](images/atlas-cluster-overview-aws.png)
+
+![MongoDB Atlas: IP access list](images/atlas-network-access-ip-list.png)
+
+**MongoDB Compass (example)**
+
+Data exploration against the same Atlas cluster (not a local `mongod`). PNGs live under `docs/images/` — also in the [README](../README.md#database-modeling).
 
 ![Compass: users](images/mongo-compass-users.png)
 
