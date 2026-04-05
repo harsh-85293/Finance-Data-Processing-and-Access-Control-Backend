@@ -25,7 +25,7 @@ async function getSummary(query) {
   const { from, to } = rangeResult.value;
   const trend = trendResult.value;
 
-  const match = {};
+  const match = { deletedAt: null };
   if (from || to) {
     match.date = {};
     if (from) match.date.$gte = from;

@@ -7,6 +7,7 @@ You’ll need Node 18+ (CI runs on 20), MongoDB somewhere the process can reach,
 ## Documentation
 
 - **[System design](docs/system-design.md)** — HLD/LLD, workflows, functional and non-functional requirements, features, and where SOLID is applied (service layer under `financedashboardbackend/src/services/`, thin route adapters, mappers).
+- **[Requirements coverage](docs/requirements-coverage.md)** — How core features and optional extras are implemented (traceability for operators and reviewers).
 - **[API Testing Using Postman](API%20Testing.md)** — Manual testing walkthrough (Postman-style); screenshots live in [`api-testing-images/`](api-testing-images/).
 
 ## Running it locally
@@ -69,7 +70,9 @@ Everything is under `/api`. JSON bodies expect `Content-Type: application/json`.
 
 **Users (admin only)** — `GET /users` (pagination: `page`, `limit`), `POST /users`, `PATCH /users/:id` (role, status, name, etc.)
 
-**Finance records** — under `/finance/records`. List/detail: **analyst** or **admin**. Writes: **admin** only. List query params include `type` (`income` / `expense`), `category` (exact match, case-insensitive), `dateFrom` / `dateTo`, `page`, `limit`. Create/update use `amount`, `type`, `category`, `date`, optional `notes`.
+**Finance records** — under `/finance/records`. List/detail: **analyst** or **admin**. Writes: **admin** only. List query params include `type` (`income` / `expense`), `category` (exact match, case-insensitive), `dateFrom` / `dateTo`, `page`, `limit`. Create/update use `amount`, `type`, `category`, `date`, optional `notes`. **Delete** is a **soft delete** (`deletedAt`); deleted rows are hidden from list, get-by-id, updates, and dashboard totals.
+
+**Rate limiting** — Per-IP limits on `/api/auth` (default 60 requests / 15 min) and on other protected `/api/*` routes (default 300 / 15 min). Tune with `RATE_LIMIT_AUTH_MAX` and `RATE_LIMIT_API_MAX` in env. Limits are skipped when `NODE_ENV=test` (automated tests). On Vercel, `trust proxy` is enabled automatically so limits use the client IP; for other reverse proxies set `TRUST_PROXY=1`.
 
 **Dashboard** — `GET /dashboard/summary` for any logged-in role. Optional `dateFrom`, `dateTo`, and `trend` (`month` or `week`) for how trend buckets are shaped. Response includes totals, per-category numbers, recent rows, and trend series.
 

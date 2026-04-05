@@ -59,7 +59,7 @@ This document summarizes **high-level design (HLD)**, **low-level design (LLD)**
 | **NFR-2** | Security | Public registration cannot assign arbitrary admin (first-user bootstrap + admin-only user API). |
 | **NFR-3** | Data | Single shared dataset (no multi-tenant isolation in schema). |
 | **NFR-4** | Ops | Health endpoint for liveness; MongoDB connection reused per process / lazy on serverless. |
-| **NFR-5** | Limits | JSON body size capped (e.g. 1mb); pagination upper bounds on list endpoints. |
+| **NFR-5** | Limits | JSON body size capped (e.g. 1mb); pagination upper bounds on list endpoints; per-IP rate limits on `/api` (auth vs general), disabled in `NODE_ENV=test`. |
 | **NFR-6** | Portability | Node 18+; same app runs locally, on PaaS, or Vercel functions with env-based config. |
 
 ---
@@ -229,12 +229,14 @@ erDiagram
 | `date` | Date | Required; business date of the record. |
 | `notes` | String | Optional; default `""`. |
 | `createdBy` | ObjectId | Required; ref **User**. |
+| `deletedAt` | Date | Default `null`; set when the record is **soft-deleted** (omit from API lists and aggregates). |
 | `createdAt` / `updatedAt` | Date | From `{ timestamps: true }`. |
 
 **Indexes declared in code** (`financialRecord.js`)
 
 | Index | Purpose |
 |-------|---------|
+| `{ deletedAt: 1 }` | Filter active rows (`deletedAt: null`). |
 | `{ date: -1 }` | Sort/filter lists and dashboards by date (newest first). |
 | `{ category: 1 }` | Filter/group by category. |
 | `{ type: 1 }` | Filter by income vs expense. |
@@ -247,7 +249,7 @@ erDiagram
 **Not modeled in DB**
 
 - JWT sessions are stateless (no `sessions` collection).  
-- No soft-delete flags on records in the current schema (delete is hard `findByIdAndDelete`).  
+- Finance records use **soft delete**: `deletedAt` is set on delete; list/get/update/dashboard ignore deleted rows (`deletedAt: null` only).  
 - User deletion (if introduced) would not cascade; existing `financialrecords` could retain orphan `createdBy` values unless handled in application logic.
 
 ### 5.4 Auth token

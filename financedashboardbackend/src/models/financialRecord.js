@@ -25,10 +25,15 @@ const financialRecordSchema = new mongoose.Schema(
       ref: "User",
       required: true,
     },
+    deletedAt: {
+      type: Date,
+      default: null,
+    },
   },
   { timestamps: true }
 );
 
+financialRecordSchema.index({ deletedAt: 1 });
 financialRecordSchema.index({ date: -1 });
 financialRecordSchema.index({ category: 1 });
 financialRecordSchema.index({ type: 1 });

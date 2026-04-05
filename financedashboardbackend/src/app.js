@@ -3,12 +3,18 @@ const cors = require("cors");
 const cookieParser = require("cookie-parser");
 
 const { connectDb } = require("./config/db");
+const { authLimiter, apiLimiter } = require("./middlewares/rateLimit");
 const authRoutes = require("./routes/auth");
 const usersRoutes = require("./routes/users");
 const financeRoutes = require("./routes/finance");
 const dashboardRoutes = require("./routes/dashboard");
 
 const app = express();
+
+// So rate limiting and similar middleware see the real client IP behind Vercel / other reverse proxies.
+if (process.env.TRUST_PROXY === "1" || process.env.VERCEL) {
+  app.set("trust proxy", 1);
+}
 
 const allowedOrigins = new Set([
   "http://localhost:3000",
@@ -55,10 +61,10 @@ app.use(async (req, res, next) => {
   }
 });
 
-app.use("/api/auth", authRoutes);
-app.use("/api/users", usersRoutes);
-app.use("/api/finance/records", financeRoutes);
-app.use("/api/dashboard", dashboardRoutes);
+app.use("/api/auth", authLimiter, authRoutes);
+app.use("/api/users", apiLimiter, usersRoutes);
+app.use("/api/finance/records", apiLimiter, financeRoutes);
+app.use("/api/dashboard", apiLimiter, dashboardRoutes);
 
 app.use((req, res) => {
   res.status(404).json({ message: "Not found" });

@@ -13,6 +13,11 @@ const {
   collectFieldErrors,
 } = require("../utils/validation");
 
+/** Only non–soft-deleted rows (missing or null `deletedAt`). */
+function activeRecordFilter(base = {}) {
+  return { ...base, deletedAt: null };
+}
+
 function buildListFilter({ typeFilter, categoryFilter, rangeResult }) {
   const filter = {};
   if (typeFilter) {
@@ -66,7 +71,9 @@ async function listRecords(query) {
     return fail(400, { message: "Validation failed", details: errs });
   }
 
-  const filter = buildListFilter({ typeFilter, categoryFilter, rangeResult });
+  const filter = activeRecordFilter(
+    buildListFilter({ typeFilter, categoryFilter, rangeResult })
+  );
   const page = pageResult.value;
   const limit = limitResult.value;
   const skip = (page - 1) * limit;
@@ -88,7 +95,7 @@ async function getRecordById(id) {
   if (!mongoose.isValidObjectId(id)) {
     return fail(400, { message: "Invalid record id" });
   }
-  const doc = await FinancialRecord.findById(id);
+  const doc = await FinancialRecord.findOne(activeRecordFilter({ _id: id }));
   if (!doc) {
     return fail(404, { message: "Record not found" });
   }
@@ -129,7 +136,7 @@ async function updateRecord(id, body) {
     return fail(400, { message: "Invalid record id" });
   }
 
-  const doc = await FinancialRecord.findById(id);
+  const doc = await FinancialRecord.findOne(activeRecordFilter({ _id: id }));
   if (!doc) {
     return fail(404, { message: "Record not found" });
   }
@@ -191,7 +198,11 @@ async function deleteRecord(id) {
   if (!mongoose.isValidObjectId(id)) {
     return fail(400, { message: "Invalid record id" });
   }
-  const doc = await FinancialRecord.findByIdAndDelete(id);
+  const doc = await FinancialRecord.findOneAndUpdate(
+    activeRecordFilter({ _id: id }),
+    { $set: { deletedAt: new Date() } },
+    { new: false }
+  );
   if (!doc) {
     return fail(404, { message: "Record not found" });
   }
