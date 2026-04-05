@@ -1,11 +1,11 @@
 # Finance dashboard backend
-
-Express + MongoDB API for a small finance dashboard: JWT auth, role-based access, and aggregated summaries. The app lives in `financedashboardbackend/`; the repo root has a workspace `package.json` so installs work locally and on Vercel. Serverless entry is `api/index.js` wrapping the same app with `serverless-http`.
-
+Express + MongoDB API for a small finance dashboard: 
+JWT auth, role-based access, and aggregated summaries.
+The app lives in `financedashboardbackend/`; the repo root has a workspace `package.json` so installs work locally and on Render.
+Serverless entry is `api/index.js` wrapping the same app with `serverless-http`.
 You need Node 18+, a MongoDB URI, and npm (root `package-lock.json`).
 
 ## Quick start
-
 ```bash
 git clone <repo-url>
 cd <repo-directory>
@@ -14,7 +14,6 @@ cp financedashboardbackend/.env.example financedashboardbackend/.env
 ```
 
 Set **`MONGODB_URI`** and **`JWT_SECRET`** in `financedashboardbackend/.env` (use a long random secret in production).
-
 ```bash
 npm test -w financedashboardbackend
 npm run dev -w financedashboardbackend
@@ -23,9 +22,7 @@ npm run dev -w financedashboardbackend
 `GET http://localhost:4000/api/health` → `{ "ok": true }`.
 
 ## Development (lint & format)
-
 From the repo root:
-
 ```bash
 npm run lint
 npm run format:check
@@ -35,7 +32,6 @@ npm run format
 CI runs lint and format check before tests.
 
 ## Architecture (request flow)
-
 ```text
 HTTP client
   → Express (financedashboardbackend/src/app.js)
@@ -46,7 +42,8 @@ HTTP client
   → handler → services → Mongoose → JSON
 ```
 
-**Layers:** routes are thin; services own validation and queries; models + indexes in `src/models/`. Deeper diagrams: **[system design](docs/system-design.md)** (§4.1 HLD, §5.2 sequence).
+**Layers:** routes are thin; services own validation and queries; models + indexes in `src/models/`.
+Deeper diagrams: **[system design](docs/system-design.md)** (§4.1 HLD, §5.2 sequence).
 
 **Ops:** Stateless JWT, optional Mongo pool env vars, gzip, `X-Request-Id`, `/api/health` vs `/api/health/ready`, graceful shutdown. Optional **`REDIS_URL`** shares rate-limit state and caches dashboard summaries (TTL; invalidated on finance writes). Without Redis, limits are in-memory and the dashboard hits Mongo every time. Kafka isn’t in this repo.
 
@@ -62,29 +59,13 @@ HTTP client
 
 Inactive users get **403** on protected routes.
 
-## HTTP status codes (common)
-
-| Code | When |
-|------|------|
-| **200** | Success |
-| **201** | Created |
-| **400** | Validation / bad input (often `details`) |
-| **401** | Missing or invalid JWT |
-| **403** | Wrong role or inactive account |
-| **404** | Resource not found |
-| **409** | Conflict (e.g. duplicate email) |
-| **429** | Rate limit exceeded |
-| **500** | Unexpected server error |
-
 ## Security notes
-
 - Passwords: **bcrypt** hashes; never returned in JSON.  
 - JWT: signed with **`JWT_SECRET`**; **`Authorization: Bearer`** or httpOnly **`token`** cookie.  
 - Rate limits on `/api/auth` and other `/api` groups (off when `NODE_ENV=test`). With **`REDIS_URL`**, limits use Redis across instances.  
 - Don’t commit **`financedashboardbackend/.env`** — use **`.env.example`**.
 
 ## Security hardening
-
 Rough notes for reviewers—not a pentest. You still need HTTPS in front of the app, locked-down Atlas/Redis, and secrets only in the host env.
 
 | Issue | What we did |
@@ -117,7 +98,6 @@ Screenshots below are from **MongoDB Compass** against an **Atlas** cluster on *
 <img src="docs/images/mongo-compass-financialrecords.png" alt="Compass: financialrecords" width="920" />
 
 ## Documentation
-
 - **[System design](docs/system-design.md)** — HLD/LLD, workflows, data model (Mermaid in §4.1, §5.2).  
 - **[Feature checklist](docs/feature-checklist.md)** — Feature table.  
 - **[openapi.yaml](docs/openapi.yaml)** — Route sketch + cross-cutting behaviour.  
@@ -194,9 +174,7 @@ Content-Type: application/json
 ```
 
 ## Scope choices
-
 Single DB, single org. First signup bootstraps admin. Bcrypt passwords only, no OAuth. CORS locked to known origins; API clients without `Origin` still work.
 
 ## Tradeoffs
-
 One auth story (cookie + optional Bearer) keeps browser and CLI clients simple; cookie `Secure`/`SameSite` must match how the frontend is hosted. Mongo stays flexible; referential checks are in code. Vercel uses the same app in serverless (cold starts). Workspace layout matches how Vercel installs. Dashboard uses aggregations—fine at moderate size; indexes and optional Redis cache help. Category filter is exact match (case-insensitive), not fuzzy search.
