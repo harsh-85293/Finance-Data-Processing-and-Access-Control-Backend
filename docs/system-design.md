@@ -6,16 +6,16 @@ See the [README](../README.md) for a short overview and [openapi.yaml](openapi.y
 
 ---
 
-## 1. Product features (what the system does)
+## 1. Product features
 
-| Area | Feature |
-|------|---------|
-| **Identity** | Register, login, logout; JWT in httpOnly cookie or `Authorization: Bearer`. |
-| **Bootstrap** | First registered user in the database becomes **admin**; later self-registrations are **viewer** (role is not chosen on public register). |
-| **Users** | Admins list users (paginated), create users with a chosen role, update role/status/name. |
-| **Finance** | Financial records (income/expense) with amount, category, date, notes; list with filters and pagination; CRUD restricted by role. |
-| **Dashboard** | Aggregated summary: totals, by category, recent activity, monthly or weekly trends; date-range filters. |
-| **Deployment** | Long-running Node on **Render** (Web Service); optional `api/index.js` + `serverless-http` for alternate hosts. |
+| Area | Simple feature |
+|---|---|
+| Identity | Users can register, log in, and log out. Auth works with a JWT in an httpOnly cookie or a Bearer token. |
+| Bootstrap | The first user who signs up becomes `admin`. Later public signups become `viewer`. Public users cannot choose their own role. |
+| Users | Admins can view users with pagination, create users with a selected role, and update user role, status, or name. |
+| Finance | The system manages income and expense records with amount, category, date, and notes. Listing supports filters and pagination. Access depends on role. |
+| Dashboard | Users can view summary analytics such as totals, category breakdowns, recent activity, and monthly or weekly trends, with date filters. |
+| Deployment | The app runs as a long-running Node service on Render. An optional `api/index.js` with `serverless-http` can support other hosts. |
 
 ---
 
@@ -23,48 +23,91 @@ See the [README](../README.md) for a short overview and [openapi.yaml](openapi.y
 
 ### 2.1 Authentication & sessions
 
-- **FR-A1:** Users can register with email, password, and name; password must meet minimum length rules.
-- **FR-A2:** Users can log in with email/password; server issues a JWT.
-- **FR-A3:** Clients can send the JWT as an httpOnly cookie (`token`) or `Authorization: Bearer <jwt>`.
-- **FR-A4:** Logout clears the auth cookie.
-- **FR-A5:** Protected routes reject missing/invalid tokens and inactive accounts appropriately.
+- Users can register with email, password, and name; password must meet minimum length rules.
+- Users can log in with email/password; server issues a JWT.
+- Clients can send the JWT as an httpOnly cookie (`token`) or `Authorization: Bearer <jwt>`.
+- Logout clears the auth cookie.
+- Protected routes reject missing/invalid tokens and inactive accounts appropriately.
 
 ### 2.2 Authorization (RBAC)
 
-- **FR-Z1:** Roles: `viewer`, `analyst`, `admin` with documented permissions (see README).
-- **FR-Z2:** **Viewer:** access dashboard summary only; no finance list/write; no user management.
-- **FR-Z3:** **Analyst:** read finance records + dashboard; no writes to records or users.
-- **FR-Z4:** **Admin:** full finance CRUD + user management.
+- Roles: `viewer`, `analyst`, `admin` with documented permissions (see README).
+- **Viewer:** access dashboard summary only; no finance list/write; no user management.
+- **Analyst:** read finance records and dashboard; no writes to records or users.
+- **Admin:** full finance CRUD and user management.
 
 ### 2.3 Users (admin)
 
-- **FR-U1:** Admin can list users with pagination (`page`, `limit`, `total`).
-- **FR-U2:** Admin can create users and set **role** explicitly.
-- **FR-U3:** Admin can update user role, status, name.
+- Admin can list users with pagination (`page`, `limit`, `total`).
+- Admin can create users and set role explicitly.
+- Admin can update user role, status, and name.
 
 ### 2.4 Finance records
 
-- **FR-F1:** Admin can create/update/delete records with validated fields (type income/expense, positive amount, etc.).
-- **FR-F2:** Analyst and admin can list and get-by-id with optional filters (type, category, date range) and pagination.
+- Admin can create/update/delete records with validated fields (type income/expense, positive amount, etc.).
+- Analyst and admin can list and get-by-id with optional filters (type, category, date range) and pagination.
 
 ### 2.5 Dashboard
 
-- **FR-D1:** Authenticated users (all roles) can fetch summary analytics with optional `dateFrom`/`dateTo` and `trend` (month/week).
-
+- Authenticated users (all roles) can fetch summary analytics with optional `dateFrom` / `dateTo` and `trend` (month/week).
 ---
 
-## 3. Non-functional requirements
+## Non-functional requirements
 
-| ID | Category | Requirement |
-|----|----------|-------------|
-| **NFR-1** | Security | Bcrypt passwords; JWT (HS256); httpOnly cookies in prod; min `JWT_SECRET` length in prod (`envValidate.js`); helmet + express-mongo-sanitize; generic 500 responses ([README](../README.md#security-hardening)). |
-| **NFR-2** | Security | Public registration cannot assign arbitrary admin (first-user bootstrap + admin-only user API). |
-| **NFR-3** | Data | Single shared dataset (no multi-tenant isolation in schema). |
-| **NFR-4** | Ops | Health endpoint for liveness; MongoDB connection reused per process / lazy on cold start. |
-| **NFR-5** | Limits | JSON body size capped (e.g. 1mb); pagination upper bounds on list endpoints; per-IP rate limits on `/api` (auth vs general), disabled in `NODE_ENV=test`. |
-| **NFR-6** | Portability | Node 18+; same app runs locally, on **Render** or other PaaS, with env-based config. |
-| **NFR-7** | Scalability | Stateless HTTP + JWT; MongoDB pool size configurable (`MONGODB_*` env); response compression; `X-Request-Id` for tracing; `GET /api/health` (liveness) vs `GET /api/health/ready` (readiness); graceful shutdown closes HTTP then optional Redis then MongoDB on SIGTERM/SIGINT. |
-| **NFR-8** | Optional Redis | If **`REDIS_URL`** is set: `express-rate-limit` uses **`rate-limit-redis`** so limits are consistent across horizontally scaled Node processes; **`GET /api/dashboard/summary`** may return a cached JSON payload (TTL **`DASHBOARD_CACHE_TTL_SECONDS`**, default 60s); any finance record create/update/soft-delete **increments a generation key** so cached entries are not reused after data changes. If **`REDIS_URL`** is unset, limits stay in-memory and every dashboard request runs the aggregation (same as before). Tests and CI do not require Redis. **Apache Kafka** is not integrated—event streaming is out of scope for this codebase size. |
+### 1. Security
+- Use bcrypt for password hashing.
+- Use JWT (`HS256`) for authentication.
+- Use httpOnly cookies in production.
+- Require a strong `JWT_SECRET` in production.
+- Enable `helmet` and `express-mongo-sanitize`.
+- Return generic `500` error responses.
+
+### 2. Admin bootstrap security
+- Public signup must not assign admin freely.
+- Only the first user may bootstrap as admin.
+- After that, only admins can create users.
+
+### 3. Data model
+- Use a single shared dataset.
+- Multi-tenant isolation is not supported.
+
+### 4. Operations
+- Provide a liveness health endpoint.
+- Reuse MongoDB connection per process.
+- Allow lazy connection on cold start.
+
+### 5. Limits
+- Cap JSON body size (for example, `1mb`).
+- Enforce pagination upper bounds.
+- Apply per-IP rate limiting on `/api`.
+- Disable rate limiting in `NODE_ENV=test`.
+
+### 6. Portability
+- Support Node.js 18+.
+- Run the same app locally and on Render or similar PaaS.
+- Use environment-based configuration.
+
+### 7. Scalability
+- Keep the app stateless with HTTP + JWT.
+- Make MongoDB pool size configurable.
+- Enable response compression.
+- Include `X-Request-Id` in responses.
+- Expose:
+  - `GET /api/health` for liveness
+  - `GET /api/health/ready` for readiness
+- On shutdown, close HTTP first, then Redis, then MongoDB.
+
+### 8. Optional Redis
+- If `REDIS_URL` is set:
+  - use Redis for rate limiting
+  - optionally cache `GET /api/dashboard/summary`
+- Control cache TTL with `DASHBOARD_CACHE_TTL_SECONDS`
+- Invalidate dashboard cache after create/update/soft-delete
+- If Redis is not set:
+  - keep rate limits in memory
+  - run dashboard aggregation normally
+- Redis is not required for tests or CI.
+- Kafka/event streaming is out of scope.
 
 ---
 
@@ -91,16 +134,37 @@ flowchart LR
   E -.->|if REDIS_URL: rate limits + dashboard cache| R
 ```
 
-**Diagram note:** **Redis** is **optional** (see **NFR-8**). If `REDIS_URL` is unset, the dashed link is unused: rate limits stay in-process and dashboard aggregations always hit MongoDB. Re-export any PNGs or slides from this Mermaid source after architecture changes so screenshots stay in sync.
+**Redis** is **optional** (see 8 in non functional requirement). If `REDIS_URL` is unset, the dashed link is unused: rate limits stay in-process and dashboard aggregations always hit MongoDB.
 
 ### 4.2 Logical architecture
 
-- **API layer:** Express routers under `/api` (auth, users, finance, dashboard).
-- **Domain:** Users and financial records; role checks before business logic.
-- **Persistence:** Mongoose models + MongoDB (indexes on common query fields).
-- **Optional cache / coordination:** When `REDIS_URL` is set, **ioredis** backs shared **rate-limit** counters (`rate-limit-redis`) and a short-TTL **dashboard summary** cache (`dashboardCache.js`); finance writes bump cache generation.
-- **Cross-cutting:** CORS allowlist, JSON parsing, cookie parsing, compression, request IDs, centralized error handling, DB connection middleware.
+- **API layer:** The system uses Express routes under `/api` for:
+  - auth
+  - users
+  - finance
+  - dashboard
 
+- **Domain layer:** The main business areas are:
+  - users
+  - financial records  
+  Role checks are applied before business logic runs.
+
+- **Persistence layer:** Data is stored in MongoDB using Mongoose models.  
+  Indexes are added on commonly used query fields.
+
+- **Optional cache / coordination:** If `REDIS_URL` is configured:
+  - Redis is used for shared rate-limit counters
+  - Redis is also used for short-term dashboard summary caching
+  - finance create/update actions refresh the cache generation
+
+- **Cross-cutting concerns:** The system also includes:
+  - CORS allowlist
+  - JSON body parsing
+  - cookie parsing
+  - compression
+  - request IDs
+  - centralized error handling
+  - database connection middleware
 ### 4.3 Deployment views
 
 | Mode | Entry | Notes |
@@ -182,19 +246,59 @@ If `REDIS_URL` is unset, the optional Redis step is skipped (in-memory limits, d
 
 ### 5.3 Database design
 
-**Why MongoDB for this project**
+## Why MongoDB for this project
 
-- **Document model** fits finance rows as self-contained documents (amount, type, category, date, notes) without rigid joins for every read.  
-- **Aggregation pipeline** matches how the dashboard computes totals, category breakdowns, and trends in one round-trip to the database.  
-- **Iteration cost** is low when fields evolve (e.g. adding `deletedAt` for soft delete) compared to relational migrations for a small codebase.  
-- Scope is a **single-tenant** dataset (see NFR-3); sharding and multi-region are out of scope here.
+- MongoDB fits this project well because each finance record is a self-contained document with fields like:
+  - `amount`
+  - `type`
+  - `category`
+  - `date`
+  - `notes`
 
-**Connection**
+- The dashboard needs totals, category breakdowns, and trend data.  
+  MongoDB aggregation pipelines make this efficient in a single database round-trip.
 
-- Single MongoDB deployment; database name comes from **`MONGODB_URI`** (e.g. path `/finance_dashboard` in the URI picks that database).
-- Access via **Mongoose**; models map to collections as below.
-- **Pool sizing:** `MONGODB_MAX_POOL_SIZE` (default 10), `MONGODB_MIN_POOL_SIZE` (default 0), `MONGODB_SERVER_SELECTION_TIMEOUT_MS` (default 10000) tune concurrent connections and failover behaviour under load (see `.env.example`).
-- **Optional Redis:** when `REDIS_URL` is set, the app uses one shared **ioredis** client for rate-limit storage and dashboard summary cache keys (`financedash:*`). No Redis is required for correctness when the variable is omitted.
+- It is easy to evolve the schema as the project changes.  
+  For example, adding a field like `deletedAt` for soft delete is simple.
+
+- This project uses a **single-tenant** dataset, so advanced concerns like sharding and multi-region setup are out of scope.
+
+## Connection
+
+- The app uses a single MongoDB deployment.
+- The database name comes from `MONGODB_URI`.  
+  Example: if the URI path is `/finance_dashboard`, then the app uses the `finance_dashboard` database.
+
+- The app accesses MongoDB through **Mongoose**.
+- Mongoose models map application data to MongoDB collections.
+
+## Connection pool settings
+
+These environment variables control MongoDB connection behavior:
+
+- `MONGODB_MAX_POOL_SIZE`  
+  Default: `10`  
+  Controls the maximum number of connections.
+
+- `MONGODB_MIN_POOL_SIZE`  
+  Default: `0`  
+  Controls the minimum number of connections kept open.
+
+- `MONGODB_SERVER_SELECTION_TIMEOUT_MS`  
+  Default: `10000`  
+  Controls how long the app waits when selecting a MongoDB server.
+
+## Optional Redis
+
+- Redis is used only if `REDIS_URL` is set.
+- When enabled, the app uses one shared **ioredis** client for:
+  - rate-limit storage
+  - dashboard summary cache keys
+
+- Cache keys use the `financedash:*` pattern.
+
+- Redis is **optional**.  
+  The app still works correctly without it.
 
 **MongoDB Atlas on AWS (console)**
 
@@ -394,6 +498,3 @@ flowchart TD
 
 ---
 
-## 9. Document maintenance
-
-Update this file when you add routes, change RBAC, or alter deployment (e.g. new entrypoint or queue). The **README** remains the place for runbooks and env vars for operators.
