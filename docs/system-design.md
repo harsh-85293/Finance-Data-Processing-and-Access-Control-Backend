@@ -157,16 +157,98 @@ sequenceDiagram
 
 Note: `GET /api/health` is registered **before** the global `connectDb` middleware in `app.js`, so health does not require MongoDB. All routes mounted **after** that middleware require a successful DB connection before route handlers run.
 
-### 5.3 Data model (conceptual)
+### 5.3 Database design
 
-**User**
+**Connection**
 
-- `email` (unique), `passwordHash`, `name`, `role` (enum), `status` (active/inactive), timestamps.
+- Single MongoDB deployment; database name comes from **`MONGODB_URI`** (e.g. path `/finance_dashboard` in the URI picks that database).
+- Access via **Mongoose**; models map to collections as below.
 
-**FinancialRecord**
+**Collections (Mongoose defaults)**
 
-- `amount`, `type` (income/expense), `category`, `date`, `notes`, `createdBy` → User ref, timestamps.  
-- Indexes: `date`, `category`, `type`, `createdBy` (as implemented).
+| Mongoose model | Collection name (typical) | Purpose |
+|----------------|---------------------------|---------|
+| `User` | `users` | Accounts, roles, credentials. |
+| `FinancialRecord` | `financialrecords` | Income/expense rows; `createdBy` links to users. |
+
+**Relationship**
+
+- One **User** may have many **FinancialRecord** documents via **`createdBy`** → `User._id` (ObjectId ref `User`).  
+- No embedded subdocuments; shared pool of records for the app (no per-tenant split).
+
+**Referential integrity**
+
+- MongoDB does not enforce foreign keys. New records set **`createdBy`** from the authenticated user id (JWT `sub`), not from arbitrary client input, so references stay consistent with active accounts.
+
+```mermaid
+erDiagram
+  users ||--o{ financialrecords : createdBy
+  users {
+    ObjectId _id PK
+    string email UK
+    string passwordHash
+    string name
+    string role
+    string status
+    date createdAt
+    date updatedAt
+  }
+  financialrecords {
+    ObjectId _id PK
+    number amount
+    string type
+    string category
+    date date
+    string notes
+    ObjectId createdBy FK
+    date createdAt
+    date updatedAt
+  }
+```
+
+**`users` — fields & constraints**
+
+| Field | Type | Notes |
+|-------|------|--------|
+| `_id` | ObjectId | Primary key. |
+| `email` | String | Required, **unique** index; Mongoose `lowercase: true` + `trim` on write. |
+| `passwordHash` | String | Required; bcrypt; not selected by default in queries. |
+| `name` | String | Optional display name; default `""`. |
+| `role` | String | Enum: `viewer`, `analyst`, `admin`; default `viewer`. |
+| `status` | String | Enum: `active`, `inactive`; default `active`. |
+| `createdAt` / `updatedAt` | Date | From `{ timestamps: true }`. |
+
+**`financialrecords` — fields & constraints**
+
+| Field | Type | Notes |
+|-------|------|--------|
+| `_id` | ObjectId | Primary key. |
+| `amount` | Number | Required, **≥ 0**. |
+| `type` | String | Enum: `income`, `expense`. |
+| `category` | String | Required; trimmed. |
+| `date` | Date | Required; business date of the record. |
+| `notes` | String | Optional; default `""`. |
+| `createdBy` | ObjectId | Required; ref **User**. |
+| `createdAt` / `updatedAt` | Date | From `{ timestamps: true }`. |
+
+**Indexes declared in code** (`financialRecord.js`)
+
+| Index | Purpose |
+|-------|---------|
+| `{ date: -1 }` | Sort/filter lists and dashboards by date (newest first). |
+| `{ category: 1 }` | Filter/group by category. |
+| `{ type: 1 }` | Filter by income vs expense. |
+| `{ createdBy: 1 }` | Look up records by author (if used). |
+
+**Other indexes**
+
+- **`users.email`:** uniqueness enforced via schema `unique: true` (MongoDB unique index).
+
+**Not modeled in DB**
+
+- JWT sessions are stateless (no `sessions` collection).  
+- No soft-delete flags on records in the current schema (delete is hard `findByIdAndDelete`).  
+- User deletion (if introduced) would not cascade; existing `financialrecords` could retain orphan `createdBy` values unless handled in application logic.
 
 ### 5.4 Auth token
 

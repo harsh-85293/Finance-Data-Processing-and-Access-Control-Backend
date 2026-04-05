@@ -7,7 +7,7 @@ You’ll need Node 18+ (CI runs on 20), MongoDB somewhere the process can reach,
 ## Documentation
 
 - **[System design](docs/system-design.md)** — HLD/LLD, workflows, functional and non-functional requirements, features, and where SOLID is applied (service layer under `financedashboardbackend/src/services/`, thin route adapters, mappers).
-- **[API Testing](API%20Testing.md)** — Manual testing walkthrough (Postman-style); screenshots live in [`api-testing-images/`](api-testing-images/).
+- **[API Testing Using Postman](API%20Testing.md)** — Manual testing walkthrough (Postman-style); screenshots live in [`api-testing-images/`](api-testing-images/).
 
 ## Running it locally
 
