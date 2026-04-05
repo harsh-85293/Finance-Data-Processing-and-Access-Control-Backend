@@ -340,15 +340,17 @@ These map to **[requirements coverage](../docs/requirements-coverage.md)**. Belo
    - Check the JSON: `page`, `limit`, `total`, and `data` length ≤ `limit`.
 3. If `total` > 2, **GET** the same URL with `page=2` — you should see the next slice of records (or an empty `data` if there are no more).
 
+Same Postman layout as **§6.2** (list + Params). Screenshot reuses **`read.png`**:
+
+<img src="api-testing-images/read.png" height=450px width=900px alt="Finance list with page and limit — same as §6.2">
+
 **Users list (admin)**
 
 1. Log in as **admin**.
 2. **GET** `http://localhost:4000/api/users?page=1&limit=5`  
    - Expect **200** with JSON fields `page`, `limit`, `total`, and `data` (array of users).
 
-<img src="api-testing-images/opt-pagination-finance.png" height=450px width=900px alt="Placeholder: pagination finance list Params + response">
-
-<img src="api-testing-images/opt-pagination-users.png" height=450px width=900px alt="Placeholder: pagination users list admin">
+Same pagination fields as finance; there is no separate figure earlier — use the **same Params / Body panel style** as **`read.png`**, with the URL set to `/api/users`.
 
 ### 7.2 Filtering (type, category, date range)
 
@@ -365,17 +367,27 @@ This is **structured filtering**, not full-text search across notes.
 
 3. Confirm `data` only includes rows that match; `total` reflects the filter.
 
-<img src="api-testing-images/opt-filtering.png" height=450px width=900px alt="Placeholder: filtered finance list Params + response">
+Still the **same** `GET /api/finance/records` screen as **§6.2** — only the query string changes. Screenshot reuses **`read.png`**:
+
+<img src="api-testing-images/read.png" height=450px width=900px alt="Filtered finance list — same panel as §6.2">
 
 ### 7.3 Soft delete (verify behaviour)
 
-1. **POST** a record as **admin** (§6.4) and copy its `record.id`.
-2. **DELETE** `http://localhost:4000/api/finance/records/<RECORD_ID>` — expect **200** and `"Deleted data successfully"`.
-3. **GET** `http://localhost:4000/api/finance/records/<RECORD_ID>` — expect **404** (soft-deleted ids are treated as gone for reads).
-4. **GET** `http://localhost:4000/api/finance/records` — that id should **not** appear in `data`.
-5. **GET** `http://localhost:4000/api/dashboard/summary` — totals / recent activity should **not** still count that row.
+1. **POST** a record as **admin** (§6.4) — screenshot **`image-1.png`** (successful create).
+2. **DELETE** `http://localhost:4000/api/finance/records/<RECORD_ID>` — expect **200** and `"Deleted data successfully"` — same as **§6.6**, **`dr.png`**.
+3. **GET** `http://localhost:4000/api/finance/records/<RECORD_ID>` — expect **404** — same Postman layout as **§6.3** — **ger.png**, with a **404** response body.
+4. **GET** `http://localhost:4000/api/finance/records` — that id should **not** appear in `data` — **`read.png`** (list).
+5. **GET** `http://localhost:4000/api/dashboard/summary` — totals / recent activity should **not** still count that row — same as **§5**, **`image-5.png`**.
 
-<img src="api-testing-images/opt-soft-delete-flow.png" height=450px width=900px alt="Placeholder: soft delete sequence or final 404 + dashboard">
+<img src="api-testing-images/image-1.png" height=450px width=900px alt="Create — §6.4">
+
+<img src="api-testing-images/dr.png" height=450px width=900px alt="DELETE — §6.6">
+
+<img src="api-testing-images/ger.png" height=450px width=900px alt="GET by id — §6.3 (here expect 404)">
+
+<img src="api-testing-images/read.png" height=450px width=900px alt="List — §6.2">
+
+<img src="api-testing-images/image-5.png" height=450px width=900px alt="Dashboard summary — §5">
 
 ### 7.4 Rate limiting
 
@@ -384,13 +396,15 @@ The API limits requests **per IP** (defaults: **60 / 15 min** on `/api/auth`, **
 **Easier local check (temporarily strict env)**
 
 1. In `financedashboardbackend/.env` set e.g. `RATE_LIMIT_AUTH_MAX=3` (and restart `npm run dev -w financedashboardbackend`).
-2. Send **POST** `/api/auth/login` **four times in a row** with valid JSON (same or different body).
-3. Expect the **fourth** response to be **429 Too Many Requests** with a JSON body like `{ "message": "Too many requests, please try again later." }`.
+2. Send **POST** `/api/auth/login` **four times in a row** with valid JSON (same or different body). The request panel matches **§3** — **`imagel.png`**.
+3. Expect the **fourth** response to be **429 Too Many Requests** with a JSON body like `{ "message": "Too many requests, please try again later." }` — same compact error JSON style as **§6.4** insufficient permissions — **`image-6.png`** (your **429** screenshot can replace or sit beside this pattern).
 4. Remove or comment out the env var and restart so normal limits apply.
 
-**Alternative:** use **Postman Collection Runner** to fire many **GET** `/api/dashboard/summary` requests with auth until you hit **429** (slower with default `RATE_LIMIT_API_MAX=300`).
+**Alternative:** use **Postman Collection Runner** to fire many **GET** `/api/dashboard/summary` requests with auth until you hit **429** — dashboard request matches **§5** — **image-5.png**; the **429** body matches the error style in **image-6.png**.
 
-<img src="api-testing-images/opt-rate-limit-429.png" height=450px width=900px alt="Placeholder: 429 Too Many Requests response">
+<img src="api-testing-images/imagel.png" height=450px width=900px alt="POST login — §3 (repeat for rate-limit test)">
+
+<img src="api-testing-images/image-6.png" height=450px width=900px alt="Error JSON style — §6.4 403; 429 uses same message shape">
 
 ### 7.5 Automated integration tests (terminal, not Postman)
 
@@ -402,9 +416,7 @@ From the **repo root**:
 npm test -w financedashboardbackend
 ```
 
-Expect all tests to pass (in-memory MongoDB, no real DB required).
-
-<img src="api-testing-images/opt-npm-test.png" height=450px width=900px alt="Placeholder: terminal npm test output">
+Expect all tests to pass (in-memory MongoDB, no real DB required). There is no earlier screenshot for the terminal — add your own file under `api-testing-images/` if you want a figure here.
 
 ---
 
