@@ -97,9 +97,17 @@ Deletes set **`deletedAt`** instead of removing documents, so rows stay auditabl
 
 MongoDB + Mongoose: **`users`** and **`financialrecords`**, with indexes for list filters, soft delete, and dashboard-style queries. Rationale (why MongoDB, indexes, integrity rules, soft-delete behaviour) is in **[system design](docs/system-design.md)** under **Database design**.
 
+### Example: MongoDB Atlas + Compass (live connection)
+
+The app uses whatever database name is in **`MONGODB_URI`** (e.g. `.../finance_dashboard`). Below are **MongoDB Compass** screenshots against an Atlas cluster showing documents in **`users`** and **`financialrecords`**—proof the API can persist to MongoDB when configured with a real URI (your cluster name and rows will differ).
+
+<img src="docs/images/mongo-compass-users.png" alt="MongoDB Compass: finance_dashboard.users on Atlas" width="920" />
+
+<img src="docs/images/mongo-compass-financialrecords.png" alt="MongoDB Compass: finance_dashboard.financialrecords on Atlas" width="920" />
+
 ## Documentation
 
-- **[System design](docs/system-design.md)** — Architecture, flows, and data model (Mermaid diagrams **§4.1**, **§5.2** are the source of truth for HLD/sequence; export new PNGs from GitHub/Mermaid preview for slides—**`api-testing-images/`** screenshots are examples and may lag until re-captured).  
+- **[System design](docs/system-design.md)** — Architecture, flows, and data model (Mermaid diagrams **§4.1**, **§5.2** are the source of truth for HLD/sequence; export new PNGs from GitHub/Mermaid preview for slides—**`api-testing-images/`** screenshots are examples and may lag until re-captured). **[`docs/images/`](docs/images/)** — optional MongoDB Compass screenshots (Atlas `users` / `financialrecords`).  
 - **[Feature checklist](docs/feature-checklist.md)** — What’s implemented, in table form.  
 - **[openapi.yaml](docs/openapi.yaml)** — OpenAPI sketch for the main routes (includes cross-cutting notes: `X-Request-Id`, optional Redis cache/rate limits, compression).  
 - **[API Testing](API%20Testing.md)** — Postman walkthrough; images in [`api-testing-images/`](api-testing-images/).
