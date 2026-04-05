@@ -85,7 +85,7 @@ Redis Support
   - Rate limiting works in memory only.
   - Dashboard summaries are fetched from MongoDB on every request.
 
-## RBAC matrix (simplified)
+## Role-Based Access Control matrix 
 | Area | viewer | analyst | admin |
 |------|:------:|:-------:|:-----:|
 | `GET /api/dashboard/summary` | ✓ | ✓ | ✓ |
