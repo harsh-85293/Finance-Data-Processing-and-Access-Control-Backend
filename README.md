@@ -4,6 +4,11 @@ Express + MongoDB API for a small finance dashboard: JWT auth, role-based access
 
 You’ll need Node 18+ (CI runs on 20), MongoDB somewhere the process can reach, and **npm** — there’s a `package-lock.json`, I didn’t set this up for Yarn.
 
+## Documentation
+
+- **[System design](docs/system-design.md)** — HLD/LLD, workflows, functional and non-functional requirements, features, and where SOLID is applied (service layer under `financedashboardbackend/src/services/`, thin route adapters, mappers).
+- **[API Testing](API%20Testing.md)** — Manual testing walkthrough (Postman-style); screenshots live in [`api-testing-images/`](api-testing-images/).
+
 ## Running it locally
 
 From the **repo root**:
