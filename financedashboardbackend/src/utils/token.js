@@ -7,7 +7,7 @@ function signUserToken(userId) {
     throw new Error("JWT_SECRET is not set");
   }
   const expiresIn = process.env.JWT_EXPIRES_IN || "7d";
-  return jwt.sign({ sub: String(userId) }, secret, { expiresIn });
+  return jwt.sign({ sub: String(userId) }, secret, { expiresIn, algorithm: "HS256" });
 }
 
 function setAuthCookie(res, token) {
@@ -16,6 +16,7 @@ function setAuthCookie(res, token) {
     httpOnly: true,
     secure: isProd,
     sameSite: isProd ? "strict" : "lax",
+    path: "/",
     maxAge: 7 * 24 * 60 * 60 * 1000,
   });
 }
@@ -26,6 +27,7 @@ function clearAuthCookie(res) {
     httpOnly: true,
     secure: isProd,
     sameSite: isProd ? "strict" : "lax",
+    path: "/",
   });
 }
 

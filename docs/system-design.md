@@ -57,7 +57,7 @@ The [README](../README.md) has a short request-flow overview, RBAC table, and HT
 
 | ID | Category | Requirement |
 |----|----------|-------------|
-| **NFR-1** | Security | Passwords stored as bcrypt hashes; JWT signed with server secret; httpOnly cookies in production. |
+| **NFR-1** | Security | Passwords stored as bcrypt hashes; JWT signed with server secret; httpOnly cookies in production; **HS256-only** JWT verify; **production `JWT_SECRET` minimum length** (see `envValidate.js`); **helmet** + **express-mongo-sanitize**; generic 500 bodies (details in [README](../README.md#security-common-risks-and-what-we-mitigated)). |
 | **NFR-2** | Security | Public registration cannot assign arbitrary admin (first-user bootstrap + admin-only user API). |
 | **NFR-3** | Data | Single shared dataset (no multi-tenant isolation in schema). |
 | **NFR-4** | Ops | Health endpoint for liveness; MongoDB connection reused per process / lazy on serverless. |

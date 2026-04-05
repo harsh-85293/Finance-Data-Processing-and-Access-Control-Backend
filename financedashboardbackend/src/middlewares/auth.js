@@ -25,7 +25,7 @@ async function requireAuth(req, res, next) {
     if (!secret) {
       return res.status(500).json({ message: "Server misconfiguration" });
     }
-    const payload = jwt.verify(token, secret);
+    const payload = jwt.verify(token, secret, { algorithms: ["HS256"] });
     const userId = payload.sub;
     if (!userId) {
       return res.status(401).json({ message: "Invalid token" });

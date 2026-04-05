@@ -89,6 +89,23 @@ Inactive users receive **403** on protected routes.
 - **Rate limiting:** per IP on `/api/auth` and other protected `/api` groups (off when `NODE_ENV=test`). With **`REDIS_URL`**, counters are stored in **Redis** so limits are consistent across multiple server instances.  
 - **Secrets:** do not commit **`financedashboardbackend/.env`**; copy from **`.env.example`**.
 
+### Security: common risks and what we mitigated
+
+This is not a formal penetration-test sign-off; it documents **defence-in-depth** baked into the codebase. **Deployment** (TLS, firewall, Atlas network access, Redis passwords) remains your responsibility.
+
+| Risk | Mitigation |
+|------|------------|
+| **Guessable or short `JWT_SECRET` in production** | Startup check (`src/config/envValidate.js`): when **`NODE_ENV=production`**, the process **exits** unless `JWT_SECRET` is at least **32** characters (override with **`JWT_SECRET_MIN_LENGTH`**). |
+| **JWT “algorithm confusion”** | Tokens are **signed and verified with `HS256` only** (`algorithm` / `algorithms` in `token.js` and `auth.js`). |
+| **NoSQL injection** (e.g. `$gt` in JSON body/query) | **`express-mongo-sanitize`** strips dangerous keys/patterns from `req.body`, `req.query`, and `req.params` after JSON parsing. |
+| **Missing baseline HTTP security headers** | **`helmet`** sets headers such as `X-Content-Type-Options`, `X-DNS-Prefetch-Control`, `Strict-Transport-Security` (when served over HTTPS), etc. **CSP** is disabled for this JSON API; **CORP** is disabled so browser **CORS** + credentials keep working. |
+| **Session cookie too broad / missing path** | Auth cookie uses **`httpOnly`**, **`secure` in production**, **`SameSite` strict (prod) / lax (dev)**, explicit **`path: '/'`**. |
+| **Verbose 500 errors to clients** | Global handler returns a **generic** `{ "message": "Internal server error" }`; stack traces stay in **server logs** (with `X-Request-Id` when present). |
+| **Brute-force on `/api/auth`** | **Rate limits** (stricter on auth routes); optional **Redis** for shared counters across instances. |
+| **CORS allowing arbitrary origins** | **Allowlist** only (`localhost:3000`, `CLIENT_ORIGIN`, `VERCEL_URL`); credentials require an allowed origin. |
+
+**Still out of scope** (would be separate work): MFA/OAuth, refresh-token rotation, email verification, automated dependency scanning in CI, WAF, and full OWASP review. Run **`npm audit`** regularly and keep **`NODE_ENV=production`** on live hosts.
+
 ## Finance soft delete
 
 Deletes set **`deletedAt`** instead of removing documents, so rows stay auditable in MongoDB while lists, get-by-id, updates, and dashboard aggregates only include **`deletedAt: null`** records.

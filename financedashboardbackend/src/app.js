@@ -1,7 +1,11 @@
+require("./config/envValidate").assertProductionEnv();
+
 const express = require("express");
 const compression = require("compression");
 const cors = require("cors");
 const cookieParser = require("cookie-parser");
+const helmet = require("helmet");
+const mongoSanitize = require("express-mongo-sanitize");
 
 const { connectDb, isMongoConnected } = require("./config/db");
 const { requestId } = require("./middlewares/requestId");
@@ -28,6 +32,12 @@ if (process.env.VERCEL_URL) {
 
 app.use(requestId);
 app.use(
+  helmet({
+    contentSecurityPolicy: false,
+    crossOriginResourcePolicy: false,
+  })
+);
+app.use(
   cors({
     origin(origin, cb) {
       if (!origin) {
@@ -43,6 +53,7 @@ app.use(
 );
 app.use(compression());
 app.use(express.json({ limit: "1mb" }));
+app.use(mongoSanitize());
 app.use(cookieParser());
 
 app.get("/", (req, res) => {
