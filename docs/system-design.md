@@ -1,9 +1,15 @@
-# Finance dashboard backend — system design
+# Finance Dashboard Backend — System Design
 
--HLD/LLD, workflows, requirements, and features for this repo. 
--Stack: Express + MongoDB; optional Redis (`REDIS_URL`) where **Non functional requirement point number 8** and also 4.1 / 5.2 say so.
+This document describes the **HLD/LLD**, workflows, requirements, and key features of this repository.
 
-See the [README](../README.md) for a short overview and [openapi.yaml](openapi.yaml) for route sketches.
+**Tech stack:** Express + MongoDB  
+**Optional component:** Redis (`REDIS_URL`), where required by:
+- **Non-functional requirement 8**
+- **Section 4.1**
+- **Section 5.2**
+
+For a quick overview, see the [README](../README.md).  
+For API route structure, see [openapi.yaml](openapi.yaml).
 
 ---
 
