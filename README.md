@@ -1,14 +1,13 @@
 # Finance dashboard backend
-Express + MongoDB API for a small finance dashboard: 
-JWT auth, role-based access, and aggregated summaries.
-The app lives in `financedashboardbackend/`; the repo root has a workspace `package.json` so installs work locally and on Render.
-Serverless entry is `api/index.js` wrapping the same app with `serverless-http`.
-You need Node 18+, a MongoDB URI, and npm (root `package-lock.json`).
-
-## Quick start
+- Clone for Finance Data Processing and Access Control Backend.
 ```bash
 git clone <repo-url>
 cd <repo-directory>
+```
+
+## Quick start
+- This project uses npm as a package manager. 
+```bash
 npm install
 cp financedashboardbackend/.env.example financedashboardbackend/.env
 ```
