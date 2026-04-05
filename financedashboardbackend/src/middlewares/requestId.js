@@ -4,9 +4,7 @@ const crypto = require("crypto");
 
 const MAX_LEN = 128;
 
-/**
- * Assigns a stable request id for logs and tracing; echoes or generates X-Request-Id.
- */
+// Sets req.requestId and X-Request-Id (echo or new UUID).
 function requestId(req, res, next) {
   const incoming = req.headers["x-request-id"];
   const id =

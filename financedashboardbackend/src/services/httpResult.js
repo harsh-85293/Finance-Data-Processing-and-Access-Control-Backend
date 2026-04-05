@@ -1,7 +1,4 @@
-/**
- * Small helpers for service-layer results (routes map these to Express responses).
- * Keeps domain logic free of req/res (SRP / DIP toward HTTP adapters).
- */
+// Service return shape: routes call sendServiceResult.
 
 function ok(payload, status = 200) {
   return { ok: true, status, payload };

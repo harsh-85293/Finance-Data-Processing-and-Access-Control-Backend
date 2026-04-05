@@ -2,14 +2,9 @@ openapi: 3.0.3
 info:
   title: Finance dashboard API
   description: |
-    Main routes only. Behaviour, auth, and examples: see README and API Testing.md.
+    Sketch of main routes — full behaviour in README and API Testing.md.
 
-    **Implementation-aligned notes (not every field is modeled per path):**
-    - **Responses** may include **`X-Request-Id`** (echoed or generated) for log correlation.
-    - **Rate limiting:** per IP on `/api/auth` and other `/api` groups; when **`REDIS_URL`** is set, counters are stored in Redis (`rate-limit-redis`) for multi-instance deployments; otherwise in-memory. **`RateLimit-*`** headers apply when limits are active (not in `NODE_ENV=test`).
-    - **Compression:** successful responses may be **gzip**-encoded when the client accepts it (`compression` middleware).
-    - **Dashboard `GET /api/dashboard/summary`:** when **`REDIS_URL`** is set, responses may be served from a short-TTL Redis cache (`dashboardCache.js`); finance writes bump cache generation so data stays consistent.
-    - **Hardening:** **`helmet`** (baseline HTTP headers; CSP off for JSON API); **`express-mongo-sanitize`** on request data; JWT verify **`HS256` only**; production **`JWT_SECRET`** minimum length — see README security table.
+    Cross-cutting: `X-Request-Id` on responses; rate limits (Redis if `REDIS_URL`, else memory; off in test); gzip; optional Redis cache for dashboard summary; helmet + mongo-sanitize; HS256 JWT; see README Security hardening.
   version: 1.0.0
 
 servers:

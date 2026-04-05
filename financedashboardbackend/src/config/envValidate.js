@@ -1,9 +1,5 @@
 "use strict";
 
-/**
- * Fail fast in production if secrets are too weak (avoids deploying with defaults).
- * Skips when NODE_ENV is not "production".
- */
 function assertProductionEnv() {
   if (process.env.NODE_ENV !== "production") {
     return;

@@ -6,7 +6,7 @@ What the API implements, in one place. Details: [system-design.md](system-design
 
 | # | Area | Notes |
 |---|------|--------|
-| **1** | Users & roles | `/api/users` for admins: list (paginated), create with role, update role/status/name. Register via `/api/auth/register` (first user → admin, later → viewer). Roles: viewer, analyst, admin ([README roles](../README.md#roles-quick-reference)). |
+| **1** | Users & roles | `/api/users` for admins: list (paginated), create with role, update role/status/name. Register via `/api/auth/register` (first user → admin, later → viewer). Roles: viewer, analyst, admin ([README](../README.md#roles-quick-reference)). |
 | **2** | Finance records | `/api/finance/records` — amount, type, category, date, notes. Filters: `type`, `category`, `dateFrom`/`dateTo`, `page`/`limit`. Deletes are soft (`deletedAt`). |
 | **3** | Dashboard | `GET /api/dashboard/summary` — totals, categories, recent activity, trends (`trend=month` or `week`). Implemented in `dashboard.service.js` (MongoDB aggregation); optional **Redis** response cache via `dashboardCache.js` when `REDIS_URL` is set (invalidated on finance writes). |
 | **4** | Access control | `requireAuth` + `requireRoles` on routes. Inactive users get **403**. |
@@ -19,7 +19,7 @@ What the API implements, in one place. Details: [system-design.md](system-design
 |-------|------------------|
 | Auth | JWT in httpOnly `token` cookie or `Authorization: Bearer`; **HS256** only; production min **`JWT_SECRET`** length (`envValidate.js`). |
 | Pagination | `page` / `limit` on finance and user lists. |
-| “Search” | Filter by type, category, date — not full-text search ([tradeoffs](../README.md#tradeoffs-why-its-shaped-like-this)). |
+| “Search” | Filter by type, category, date — not full-text search ([README tradeoffs](../README.md#tradeoffs)). |
 | Soft delete | `deletedAt` set on delete; excluded from reads and dashboard math. |
 | Rate limits | `express-rate-limit` on `/api/auth` and other `/api` groups; off when `NODE_ENV=test`. With `REDIS_URL`, limits use Redis for multi-instance deployments. |
 | Health | `GET /api/health` — liveness (no DB). `GET /api/health/ready` — readiness (MongoDB connected). |

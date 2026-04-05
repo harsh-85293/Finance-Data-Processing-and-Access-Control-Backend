@@ -1,8 +1,8 @@
 # Finance dashboard backend — system design
 
-This document summarizes **high-level design (HLD)**, **low-level design (LLD)**, **workflows**, **requirements**, and **features** for this repository. It reflects the current Express + MongoDB implementation and **optional Redis** (`REDIS_URL`) where described in **NFR-8** and §4.1 / §5.2.
+HLD/LLD, workflows, requirements, and features for this repo. Stack: Express + MongoDB; optional Redis (`REDIS_URL`) where **NFR-8** and §4.1 / §5.2 say so.
 
-The [README](../README.md) has a short request-flow overview, RBAC table, and HTTP status list. [openapi.yaml](openapi.yaml) lists example paths.
+See the [README](../README.md) for a short overview and [openapi.yaml](openapi.yaml) for route sketches.
 
 ---
 
@@ -57,7 +57,7 @@ The [README](../README.md) has a short request-flow overview, RBAC table, and HT
 
 | ID | Category | Requirement |
 |----|----------|-------------|
-| **NFR-1** | Security | Passwords stored as bcrypt hashes; JWT signed with server secret; httpOnly cookies in production; **HS256-only** JWT verify; **production `JWT_SECRET` minimum length** (see `envValidate.js`); **helmet** + **express-mongo-sanitize**; generic 500 bodies (details in [README](../README.md#security-common-risks-and-what-we-mitigated)). |
+| **NFR-1** | Security | Bcrypt passwords; JWT (HS256); httpOnly cookies in prod; min `JWT_SECRET` length in prod (`envValidate.js`); helmet + express-mongo-sanitize; generic 500 responses ([README](../README.md#security-hardening)). |
 | **NFR-2** | Security | Public registration cannot assign arbitrary admin (first-user bootstrap + admin-only user API). |
 | **NFR-3** | Data | Single shared dataset (no multi-tenant isolation in schema). |
 | **NFR-4** | Ops | Health endpoint for liveness; MongoDB connection reused per process / lazy on serverless. |
@@ -146,7 +146,7 @@ financedashboardbackend/src/
 └── utils/                 # validation, tokens, async handler
 ```
 
-**SOLID mapping (pragmatic):** Services own business rules and persistence orchestration; routes stay thin (HTTP + validation). Open/closed: new behaviors can add new service functions with minimal route changes. Dependency direction: routes → services → models (finance/dashboard routes no longer embed query/aggregation logic).
+Routes stay thin; services own validation and DB work; routes → services → models.
 
 ### 5.2 Request pipeline (simplified)
 
@@ -174,9 +174,9 @@ sequenceDiagram
   H-->>C: JSON response
 ```
 
-**Sync note:** This matches the code paths in `middlewares/rateLimit.js` ( **`rate-limit-redis`** when `REDIS_URL` is set) and `services/dashboardCache.js` (summary cache + generation bump on finance writes). If `REDIS_URL` is unset, the **opt** block is skipped—limits use memory and dashboard runs MongoDB aggregation every time.
+If `REDIS_URL` is unset, the optional Redis step is skipped (in-memory limits, dashboard hits Mongo each time).
 
-Note: `GET /api/health` is registered **before** the global `connectDb` middleware in `app.js`, so liveness does not require MongoDB. **`GET /api/health/ready`** is mounted **after** `connectDb` and returns **503** if the driver is not connected—use for readiness/orchestrator probes. All other routes mounted after `connectDb` require a successful DB connection before route handlers run.
+`GET /api/health` is registered **before** the global `connectDb` middleware in `app.js`, so liveness does not require MongoDB. **`GET /api/health/ready`** is mounted **after** `connectDb` and returns **503** if the driver is not connected—use for readiness/orchestrator probes. All other routes mounted after `connectDb` require a successful DB connection before route handlers run.
 
 ### 5.3 Database design
 
@@ -194,11 +194,11 @@ Note: `GET /api/health` is registered **before** the global `connectDb` middlewa
 - **Pool sizing:** `MONGODB_MAX_POOL_SIZE` (default 10), `MONGODB_MIN_POOL_SIZE` (default 0), `MONGODB_SERVER_SELECTION_TIMEOUT_MS` (default 10000) tune concurrent connections and failover behaviour under load (see `.env.example`).
 - **Optional Redis:** when `REDIS_URL` is set, the app uses one shared **ioredis** client for rate-limit storage and dashboard summary cache keys (`financedash:*`). No Redis is required for correctness when the variable is omitted.
 
-**Visual verification (example cloud deployment)** — **MongoDB Compass** connected to **MongoDB Atlas** (hosted on **AWS**, not a local MongoDB instance). Same logical database name as in **`MONGODB_URI`** (e.g. `finance_dashboard` path) with populated **`users`** and **`financialrecords`** collections (PNGs under `docs/images/`; [README](../README.md#database-modeling)):
+Compass screenshots (Atlas on AWS, not local): `docs/images/` — also in the [README](../README.md#mongodb-atlas--compass-example).
 
-![Compass: users collection](images/mongo-compass-users.png)
+![Compass: users](images/mongo-compass-users.png)
 
-![Compass: financialrecords collection](images/mongo-compass-financialrecords.png)
+![Compass: financialrecords](images/mongo-compass-financialrecords.png)
 
 **Collections (Mongoose defaults)**
 
