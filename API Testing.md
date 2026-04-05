@@ -1,4 +1,7 @@
 # API Testing
+
+Postman screenshots live in **`api-testing-images/`**. Filenames use numbered prefixes (`01`–`20`) and describe the scenario (endpoint and typical status code where relevant), e.g. `01-api-health-check.png`, `10-finance-record-create-201.png`.
+
 ---
 
 ## 1. Sanity check
@@ -16,7 +19,7 @@
 - After MongoDB is up and the app has run **`connectDb`** (any normal `/api/...` request does this), **`GET http://localhost:4000/api/health/ready`** → `200` with `{ "ok": true, "db": "connected" }` (or **`503`** if the DB is not connected).
 - Response headers often include **`X-Request-Id`** (for log correlation). Screenshots under `api-testing-images/` are **examples**; re-run requests after code changes so captures match current behaviour.
 
-<img src="api-testing-images/image11.png" height=450px width=900px>
+<img src="api-testing-images/01-api-health-check.png" height=450px width=900px>
 
 ---
 
@@ -63,7 +66,7 @@
 
 - Send → 201. Postman can store the cookie automatically for this domain.
 
-<img src="api-testing-images/imager.png" height=450px width=900px>
+<img src="api-testing-images/02-auth-register-201.png" height=450px width=900px>
 
 ---
 
@@ -98,7 +101,7 @@
 }
 ```
 
-<img src="api-testing-images/imagel.png" height=450px width=900px>
+<img src="api-testing-images/03-auth-login-200.png" height=450px width=900px>
 
 ---
 
@@ -108,16 +111,16 @@
   Postman Settings → enable “Send cookies with requests” (and use the same host localhost:4000).  
   After register/login, call e.g. GET `http://localhost:4000/api/auth/me` — no extra headers if the cookie is sent.
 
-<img src="api-testing-images/image-3.png" height=450px width=900px>
+<img src="api-testing-images/04-auth-me-cookie.png" height=450px width=900px>
 
 - **Option B – Bearer token**  
   Copy the JWT from the Set-Cookie header value for `token=...`, or open **Cookies** under the URL bar.  
   Or use **Authorization → Type: Bearer Token** → paste the token value only (not the `token=` prefix).  
   GET `http://localhost:4000/api/auth/me`
 
-<img src="api-testing-images/image.png" height=450px width=900px>
+<img src="api-testing-images/05-auth-me-bearer.png" height=450px width=900px>
 
-<img src="api-testing-images/image-3.png" height=450px width=900px>
+<img src="api-testing-images/04-auth-me-cookie.png" height=450px width=900px>
 
 ---
 
@@ -129,7 +132,7 @@ With cookie or Bearer set, call:
 
 Optional query: `dateFrom`, `dateTo`, `trend` (`month` or `week`).
 
-<img src="api-testing-images/image-5.png" height=450px width=900px>
+<img src="api-testing-images/06-dashboard-summary.png" height=450px width=900px>
 
 Example response shape:
 
@@ -217,7 +220,7 @@ Expect **200** with `data`, `page`, `limit`, `total`.
 
 <!-- Screenshot: Postman GET list with Params tab / response -->
 
-<img src="api-testing-images/read.png" height=450px width=900px alt="Placeholder: GET finance records list">
+<img src="api-testing-images/07-finance-records-list.png" height=450px width=900px alt="Placeholder: GET finance records list">
 
 ### 6.3 Get one record (GET) — analyst or admin
 
@@ -229,7 +232,7 @@ Expect **200** with `{ "record": { ... } }`. Invalid id → **400**; missing rec
 
 <!-- Screenshot: Postman GET by id -->
 
-<img src="api-testing-images/ger.png" height=450px width=900px alt="Placeholder: GET record by id">
+<img src="api-testing-images/08-finance-record-by-id.png" height=450px width=900px alt="Placeholder: GET record by id">
 
 ### 6.4 Create record (POST) — admin only
 
@@ -256,7 +259,7 @@ Expect **201** and a `record` object with `id`, `createdBy`, timestamps.
 }
 ```
 
-<img src="api-testing-images/image-6.png" height=450px width=900px>
+<img src="api-testing-images/09-finance-record-create-403.png" height=450px width=900px>
 
 ```json
 {
@@ -266,7 +269,7 @@ Expect **201** and a `record` object with `id`, `createdBy`, timestamps.
 
 **With admin:**
 
-<img src="api-testing-images/image-1.png" height=450px width=900px>
+<img src="api-testing-images/10-finance-record-create-201.png" height=450px width=900px>
 
 ```json
 {
@@ -300,7 +303,7 @@ Expect **200** with updated `record`. No valid fields → **400**. Wrong role �
 
 <!-- Screenshot: Postman PATCH update -->
 
-<img src="api-testing-images/ur.png" height=450px width=900px alt="Placeholder: PATCH update record">
+<img src="api-testing-images/11-finance-record-patch.png" height=450px width=900px alt="Placeholder: PATCH update record">
 
 ### 6.6 Delete record (DELETE) — admin only
 
@@ -318,7 +321,7 @@ This is a **soft delete**: the row stays in MongoDB with `deletedAt` set; it no 
 
 Missing id / bad id → **400** or **404**.
 
-<img src="api-testing-images/dr.png" height=450px width=900px alt="Placeholder: DELETE record">
+<img src="api-testing-images/12-finance-record-delete.png" height=450px width=900px alt="Placeholder: DELETE record">
 
 ### 6.7 Common status codes (quick reference)
 
@@ -349,13 +352,13 @@ Optional features from the **[feature checklist](../docs/feature-checklist.md)**
 
 <!-- Screenshot: finance list pagination -->
 
-<img src="api-testing-images/pn.png" height=450px width=900px alt="">
+<img src="api-testing-images/13-finance-records-pagination.png" height=450px width=900px alt="">
 
 **Users (admin) —** `GET /api/users?page=1&limit=5` (admin JWT). Response includes `page`, `limit`, `total`, `data`.
 
 <!-- Screenshot: users list pagination (optional) -->
 
-<img src="api-testing-images/pn2.png" height=450px width=900px alt="">
+<img src="api-testing-images/14-users-pagination.png" height=450px width=900px alt="">
 
 ### 7.2 Filtering (type, category, date range)
 
@@ -373,9 +376,9 @@ Confirm filtered `data` and `total` match expectations.
 
 <!-- Screenshot: filtered finance list -->
 
-<img src="api-testing-images/filtering.png" height=450px width=900px alt="">
-<img src="api-testing-images/filtering1.png" height=450px width=900px alt="">
-<img src="api-testing-images/filtering2.png" height=450px width=900px alt="">
+<img src="api-testing-images/15-finance-filter-type.png" height=450px width=900px alt="">
+<img src="api-testing-images/16-finance-filter-category.png" height=450px width=900px alt="">
+<img src="api-testing-images/17-finance-filter-date-range.png" height=450px width=900px alt="">
 
 ### 7.3 Soft delete (end-to-end)
 
@@ -387,23 +390,23 @@ Confirm filtered `data` and `total` match expectations.
 
 <!-- Same API as §6.4 POST create -->
 
-<img src="api-testing-images/image-1.png" height=450px width=900px alt="POST create — same as §6.4">
+<img src="api-testing-images/10-finance-record-create-201.png" height=450px width=900px alt="POST create — same as §6.4">
 
 <!-- Same API as §6.6 DELETE -->
 
-<img src="api-testing-images/dr.png" height=450px width=900px alt="DELETE — same as §6.6">
+<img src="api-testing-images/12-finance-record-delete.png" height=450px width=900px alt="DELETE — same as §6.6">
 
 <!-- Same request layout as §6.3 GET by id (here 404 body) -->
 
-<img src="api-testing-images/ger.png" height=450px width=900px alt="GET by id — same as §6.3">
+<img src="api-testing-images/08-finance-record-by-id.png" height=450px width=900px alt="GET by id — same as §6.3">
 
 <!-- Same API as §6.2 list -->
 
-<img src="api-testing-images/read.png" height=450px width=900px alt="GET list — same as §6.2">
+<img src="api-testing-images/07-finance-records-list.png" height=450px width=900px alt="GET list — same as §6.2">
 
 <!-- Same API as §5 dashboard summary -->
 
-<img src="api-testing-images/image-5.png" height=450px width=900px alt="GET dashboard summary — same as §5">
+<img src="api-testing-images/06-dashboard-summary.png" height=450px width=900px alt="GET dashboard summary — same as §5">
 
 ### 7.4 Rate limiting
 
@@ -413,7 +416,7 @@ Per **IP** (defaults: **60 / 15 min** on `/api/auth`, **300 / 15 min** on other 
 
 <!-- Screenshot: login request (same route as §3) -->
 
-<img src="api-testing-images/rl.png" height=450px width=900px alt="">
+<img src="api-testing-images/18-auth-rate-limit-429.png" height=450px width=900px alt="">
 
 ---
 
@@ -423,7 +426,7 @@ POST `http://localhost:4000/api/auth/logout` → **200**; cookie cleared; JSON b
 
 - Output
 
-<img src="api-testing-images/image-2.png" height=450px width=900px>
+<img src="api-testing-images/19-auth-logout-200.png" height=450px width=900px>
 
 ```json
 {
@@ -447,5 +450,5 @@ Uses **in-memory MongoDB**; all tests should pass without a real database.
 
 <!-- Screenshot: terminal output (optional) -->
 
-<img src="api-testing-images/test.png" height=450px width=900px alt="">
+<img src="api-testing-images/20-integration-tests-cli.png" height=450px width=900px alt="">
 

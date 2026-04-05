@@ -1,9 +1,0 @@
-{
-  "installCommand": "npm ci",
-  "functions": {
-    "api/index.js": {
-      "includeFiles": "financedashboardbackend/**"
-    }
-  },
-  "rewrites": [{ "source": "/(.*)", "destination": "/api/index" }]
-}

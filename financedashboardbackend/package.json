@@ -8,10 +8,10 @@
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
     "test": "node --test --test-concurrency=1 test",
-    "lint": "cd .. && eslint --max-warnings 0 financedashboardbackend/src financedashboardbackend/test api/index.js",
-    "lint:fix": "cd .. && eslint --max-warnings 0 financedashboardbackend/src financedashboardbackend/test api/index.js --fix",
-    "format": "prettier --write \"src/**/*.js\" \"test/**/*.js\" \"../api/index.js\"",
-    "format:check": "prettier --check \"src/**/*.js\" \"test/**/*.js\" \"../api/index.js\""
+    "lint": "cd .. && eslint --max-warnings 0 financedashboardbackend/src financedashboardbackend/test",
+    "lint:fix": "cd .. && eslint --max-warnings 0 financedashboardbackend/src financedashboardbackend/test --fix",
+    "format": "prettier --write \"src/**/*.js\" \"test/**/*.js\"",
+    "format:check": "prettier --check \"src/**/*.js\" \"test/**/*.js\""
   },
   "engines": {
     "node": ">=18"
@@ -29,8 +29,7 @@
     "ioredis": "^5.10.1",
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.7.0",
-    "rate-limit-redis": "^4.3.1",
-    "serverless-http": "^3.2.0"
+    "rate-limit-redis": "^4.3.1"
   },
   "devDependencies": {
     "@eslint/js": "^9.16.0",

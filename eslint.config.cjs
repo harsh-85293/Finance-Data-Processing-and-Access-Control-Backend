@@ -8,11 +8,7 @@ module.exports = [
   { ignores: ["**/node_modules/**", "**/coverage/**"] },
   js.configs.recommended,
   {
-    files: [
-      "financedashboardbackend/src/**/*.js",
-      "financedashboardbackend/test/**/*.js",
-      "api/index.js",
-    ],
+    files: ["financedashboardbackend/src/**/*.js", "financedashboardbackend/test/**/*.js"],
     languageOptions: {
       ecmaVersion: 2022,
       sourceType: "commonjs",

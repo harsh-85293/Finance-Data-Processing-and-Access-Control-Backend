@@ -22,7 +22,7 @@ For API route structure, see [openapi.yaml](openapi.yaml).
 | Users | Admins can view users with pagination, create users with a selected role, and update user role, status, or name. |
 | Finance | The system manages income and expense records with amount, category, date, and notes. Listing supports filters and pagination. Access depends on role. |
 | Dashboard | Users can view summary analytics such as totals, category breakdowns, recent activity, and monthly or weekly trends, with date filters. |
-| Deployment | The app runs as a long-running Node service on Render. An optional `api/index.js` with `serverless-http` can support other hosts. |
+| Deployment | The app runs as a long-running Node service on **Render** (or any host that runs `npm start` / `server.js`). |
 
 ---
 
@@ -178,8 +178,6 @@ flowchart LR
 |------|--------|--------|
 | **Node server** | `financedashboardbackend/src/server.js` | `connectDb` then `listen(PORT)`. |
 | **Render (HTTPS)** | Same Node app on Render Web Service | Example production base URL: `https://finance-data-processing-and-access-jega.onrender.com` — see [README — Deploying](../README.md#deploying). |
-
-Optional **serverless-style** entry: repo root `api/index.js` wraps the app with `serverless-http` (for hosts that expect a function handler); **Render** uses the Node server entry above.
 
 ---
 
