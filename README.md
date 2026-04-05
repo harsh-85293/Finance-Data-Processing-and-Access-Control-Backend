@@ -19,7 +19,7 @@ Fill in `financedashboardbackend/.env`. You **must** set `MONGODB_URI` and `JWT_
 npm run dev -w financedashboardbackend
 ```
 
-Hit `GET /api/health` — you should see `{ "ok": true }`. Tests don’t need Mongo for what’s there right now:
+Hit `GET /api/health` — you should see `{ "ok": true }`. Run tests (they spin up an in-memory MongoDB; no local Mongo required):
 
 ```bash
 npm test -w financedashboardbackend

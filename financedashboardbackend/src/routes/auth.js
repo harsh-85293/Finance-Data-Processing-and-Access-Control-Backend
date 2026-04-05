@@ -1,5 +1,4 @@
 const express = require("express");
-const { User, ROLES } = require("../models/user");
 const { requireAuth } = require("../middlewares/auth");
 const { asyncHandler } = require("../utils/asyncHandler");
 const {
@@ -7,7 +6,9 @@ const {
   validatePassword,
   collectFieldErrors,
 } = require("../utils/validation");
-const { signUserToken, setAuthCookie, clearAuthCookie } = require("../utils/token");
+const { setAuthCookie, clearAuthCookie } = require("../utils/token");
+const { registerUser, loginUser } = require("../services/auth.service");
+const { sendServiceResult } = require("../services/httpResult");
 
 const router = express.Router();
 
@@ -23,27 +24,25 @@ router.post(
       return res.status(400).json({ message: "Validation failed", details: errs });
     }
 
-    const existing = await User.findOne({ email: emailResult.value });
-    if (existing) {
-      return res.status(409).json({ message: "Email already registered" });
+    const bodyHasRoleField =
+      req.body.role !== undefined && req.body.role !== null && req.body.role !== "";
+
+    const result = await registerUser(
+      {
+        email: emailResult.value,
+        password: passwordResult.value,
+        name,
+      },
+      bodyHasRoleField
+    );
+
+    if (!result.ok) {
+      return res.status(result.status).json(result.body);
     }
 
-    const count = await User.countDocuments();
-    const role = count === 0 ? ROLES.ADMIN : ROLES.VIEWER;
-
-    const passwordHash = await User.hashPassword(passwordResult.value);
-    const user = await User.create({
-      email: emailResult.value,
-      passwordHash,
-      name,
-      role,
-      status: "active",
-    });
-
-    const token = signUserToken(user.id);
+    const { token, ...json } = result.payload;
     setAuthCookie(res, token);
-
-    return res.status(201).json({ user: user.toSafeJSON() });
+    return res.status(result.status).json(json);
   })
 );
 
@@ -57,30 +56,26 @@ router.post(
       return res.status(400).json({ message: "Validation failed", details: errs });
     }
 
-    const user = await User.findOne({ email: emailResult.value }).select(
-      "+passwordHash"
-    );
-    if (!user) {
-      return res.status(401).json({ message: "Invalid credentials" });
-    }
-    const ok = await user.comparePassword(passwordResult.value);
-    if (!ok) {
-      return res.status(401).json({ message: "Invalid credentials" });
-    }
-    if (user.status !== "active") {
-      return res.status(403).json({ message: "Account is inactive" });
+    const result = await loginUser({
+      email: emailResult.value,
+      password: passwordResult.value,
+    });
+
+    if (!result.ok) {
+      return res.status(result.status).json(result.body);
     }
 
-    const token = signUserToken(user.id);
+    const { token, ...json } = result.payload;
     setAuthCookie(res, token);
-
-    return res.json({ user: user.toSafeJSON() });
+    return res.json(json);
   })
 );
 
 router.post("/logout", (req, res) => {
   clearAuthCookie(res);
-  return res.status(204).send();
+  return res.status(200).json({
+    message: "Logged out successfully",
+  });
 });
 
 router.get(

@@ -1,6 +1,5 @@
 const express = require("express");
-const mongoose = require("mongoose");
-const { User, ROLES } = require("../models/user");
+const { ROLES } = require("../models/user");
 const { requireAuth } = require("../middlewares/auth");
 const { requireRoles } = require("../middlewares/authorize");
 const { asyncHandler } = require("../utils/asyncHandler");
@@ -12,6 +11,12 @@ const {
   parseOptionalPositiveInt,
   collectFieldErrors,
 } = require("../utils/validation");
+const {
+  listUsersPaginated,
+  createUserByAdmin,
+  updateUserById,
+} = require("../services/user.service");
+const { sendServiceResult } = require("../services/httpResult");
 
 const router = express.Router();
 
@@ -32,21 +37,12 @@ router.get(
     if (errs) {
       return res.status(400).json({ message: "Validation failed", details: errs });
     }
-    const page = pageResult.value;
-    const limit = limitResult.value;
-    const skip = (page - 1) * limit;
 
-    const [items, total] = await Promise.all([
-      User.find({}).sort({ createdAt: -1 }).skip(skip).limit(limit),
-      User.countDocuments({}),
-    ]);
-
-    return res.json({
-      data: items.map((u) => u.toSafeJSON()),
-      page,
-      limit,
-      total,
+    const result = await listUsersPaginated({
+      page: pageResult.value,
+      limit: limitResult.value,
     });
+    return sendServiceResult(res, result);
   })
 );
 
@@ -63,21 +59,13 @@ router.post(
       return res.status(400).json({ message: "Validation failed", details: errs });
     }
 
-    const existing = await User.findOne({ email: emailResult.value });
-    if (existing) {
-      return res.status(409).json({ message: "Email already registered" });
-    }
-
-    const passwordHash = await User.hashPassword(passwordResult.value);
-    const user = await User.create({
+    const result = await createUserByAdmin({
       email: emailResult.value,
-      passwordHash,
+      password: passwordResult.value,
       name,
       role: roleResult.value,
-      status: "active",
     });
-
-    return res.status(201).json({ user: user.toSafeJSON() });
+    return sendServiceResult(res, result);
   })
 );
 
@@ -85,9 +73,6 @@ router.patch(
   "/:id",
   asyncHandler(async (req, res) => {
     const { id } = req.params;
-    if (!mongoose.isValidObjectId(id)) {
-      return res.status(400).json({ message: "Invalid user id" });
-    }
 
     const roleResult = validateRole(req.body.role, { required: false });
     const statusResult = validateStatus(req.body.status, { required: false });
@@ -104,32 +89,12 @@ router.patch(
       return res.status(400).json({ message: "Validation failed", details: errs });
     }
 
-    if (
-      roleResult.value === undefined &&
-      statusResult.value === undefined &&
-      name === undefined
-    ) {
-      return res.status(400).json({ message: "No valid fields to update" });
-    }
-
-    const user = await User.findById(id);
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
-    }
-
-    if (roleResult.value !== undefined) {
-      user.role = roleResult.value;
-    }
-    if (statusResult.value !== undefined) {
-      user.status = statusResult.value;
-    }
-    if (name !== undefined) {
-      user.name = name;
-    }
-
-    await user.save();
-
-    return res.json({ user: user.toSafeJSON() });
+    const result = await updateUserById(id, {
+      role: roleResult.value,
+      status: statusResult.value,
+      name,
+    });
+    return sendServiceResult(res, result);
   })
 );
 
