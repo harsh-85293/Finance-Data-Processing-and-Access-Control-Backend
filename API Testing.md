@@ -310,9 +310,9 @@ Expect **200** on success with a JSON body, for example:
 }
 ```
 
-Missing id / bad id → **400** or **404**.
+This is a **soft delete**: the row stays in MongoDB with `deletedAt` set; it no longer appears in list, get-by-id, or dashboard totals (see **§7.3**).
 
-<!-- Screenshot: Postman DELETE -->
+Missing id / bad id → **400** or **404**.
 
 <img src="api-testing-images/dr.png" height=450px width=900px alt="Placeholder: DELETE record">
 
@@ -327,9 +327,90 @@ Missing id / bad id → **400** or **404**.
 
 ---
 
-## 7. Logout
+## 7. Optional enhancements — how to test in Postman
 
-POST `http://localhost:4000/api/auth/logout` → 204; cookie cleared.
+These map to **[requirements coverage](../docs/requirements-coverage.md)**. Below is what you can prove **from Postman** (plus one terminal section for automated tests).
+
+### 7.1 Pagination
+
+**Finance list**
+
+1. Log in as **analyst** or **admin** (§3–4).
+2. **GET** `http://localhost:4000/api/finance/records?page=1&limit=2`  
+   - Check the JSON: `page`, `limit`, `total`, and `data` length ≤ `limit`.
+3. If `total` > 2, **GET** the same URL with `page=2` — you should see the next slice of records (or an empty `data` if there are no more).
+
+**Users list (admin)**
+
+1. Log in as **admin**.
+2. **GET** `http://localhost:4000/api/users?page=1&limit=5`  
+   - Expect **200** with JSON fields `page`, `limit`, `total`, and `data` (array of users).
+
+<img src="api-testing-images/opt-pagination-finance.png" height=450px width=900px alt="Placeholder: pagination finance list Params + response">
+
+<img src="api-testing-images/opt-pagination-users.png" height=450px width=900px alt="Placeholder: pagination users list admin">
+
+### 7.2 Filtering (type, category, date range)
+
+This is **structured filtering**, not full-text search across notes.
+
+1. Create a few records with different **type**, **category**, and **dates** (§6.4) or use existing data.
+2. **GET** examples (adjust host and query values):
+
+`http://localhost:4000/api/finance/records?type=income`
+
+`http://localhost:4000/api/finance/records?category=salary`
+
+`http://localhost:4000/api/finance/records?dateFrom=2026-01-01&dateTo=2026-12-31`
+
+3. Confirm `data` only includes rows that match; `total` reflects the filter.
+
+<img src="api-testing-images/opt-filtering.png" height=450px width=900px alt="Placeholder: filtered finance list Params + response">
+
+### 7.3 Soft delete (verify behaviour)
+
+1. **POST** a record as **admin** (§6.4) and copy its `record.id`.
+2. **DELETE** `http://localhost:4000/api/finance/records/<RECORD_ID>` — expect **200** and `"Deleted data successfully"`.
+3. **GET** `http://localhost:4000/api/finance/records/<RECORD_ID>` — expect **404** (soft-deleted ids are treated as gone for reads).
+4. **GET** `http://localhost:4000/api/finance/records` — that id should **not** appear in `data`.
+5. **GET** `http://localhost:4000/api/dashboard/summary` — totals / recent activity should **not** still count that row.
+
+<img src="api-testing-images/opt-soft-delete-flow.png" height=450px width=900px alt="Placeholder: soft delete sequence or final 404 + dashboard">
+
+### 7.4 Rate limiting
+
+The API limits requests **per IP** (defaults: **60 / 15 min** on `/api/auth`, **300 / 15 min** on other protected `/api` routes). In **tests** (`NODE_ENV=test`) limits are **off** — use a normal dev server for this check.
+
+**Easier local check (temporarily strict env)**
+
+1. In `financedashboardbackend/.env` set e.g. `RATE_LIMIT_AUTH_MAX=3` (and restart `npm run dev -w financedashboardbackend`).
+2. Send **POST** `/api/auth/login` **four times in a row** with valid JSON (same or different body).
+3. Expect the **fourth** response to be **429 Too Many Requests** with a JSON body like `{ "message": "Too many requests, please try again later." }`.
+4. Remove or comment out the env var and restart so normal limits apply.
+
+**Alternative:** use **Postman Collection Runner** to fire many **GET** `/api/dashboard/summary` requests with auth until you hit **429** (slower with default `RATE_LIMIT_API_MAX=300`).
+
+<img src="api-testing-images/opt-rate-limit-429.png" height=450px width=900px alt="Placeholder: 429 Too Many Requests response">
+
+### 7.5 Automated integration tests (terminal, not Postman)
+
+These are **not** exercised through Postman; they document that CI-style checks exist.
+
+From the **repo root**:
+
+```bash
+npm test -w financedashboardbackend
+```
+
+Expect all tests to pass (in-memory MongoDB, no real DB required).
+
+<img src="api-testing-images/opt-npm-test.png" height=450px width=900px alt="Placeholder: terminal npm test output">
+
+---
+
+## 8. Logout
+
+POST `http://localhost:4000/api/auth/logout` → **200**; cookie cleared; JSON body with message.
 
 - Output
 
