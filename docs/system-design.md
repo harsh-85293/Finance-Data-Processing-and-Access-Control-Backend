@@ -194,7 +194,7 @@ Note: `GET /api/health` is registered **before** the global `connectDb` middlewa
 - **Pool sizing:** `MONGODB_MAX_POOL_SIZE` (default 10), `MONGODB_MIN_POOL_SIZE` (default 0), `MONGODB_SERVER_SELECTION_TIMEOUT_MS` (default 10000) tune concurrent connections and failover behaviour under load (see `.env.example`).
 - **Optional Redis:** when `REDIS_URL` is set, the app uses one shared **ioredis** client for rate-limit storage and dashboard summary cache keys (`financedash:*`). No Redis is required for correctness when the variable is omitted.
 
-**Visual verification (example Atlas deployment)** — MongoDB Compass views of the same logical database (`finance_dashboard` in the URI path) showing populated **`users`** and **`financialrecords`** collections (screenshots live in the repo under `docs/images/`; also shown in the [README](../README.md#database-modeling) under **Example: MongoDB Atlas + Compass**):
+**Visual verification (example cloud deployment)** — **MongoDB Compass** connected to **MongoDB Atlas** (hosted on **AWS**, not a local MongoDB instance). Same logical database name as in **`MONGODB_URI`** (e.g. `finance_dashboard` path) with populated **`users`** and **`financialrecords`** collections (PNGs under `docs/images/`; [README](../README.md#database-modeling)):
 
 ![Compass: users collection](images/mongo-compass-users.png)
 
