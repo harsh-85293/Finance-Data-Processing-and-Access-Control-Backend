@@ -155,7 +155,8 @@ sequenceDiagram
   participant C as Client
   participant E as Express
   participant DB as connectDb
-  participant R as Router
+  participant Redis as "Redis (optional)"
+  participant Rou as Router
   participant M as Middlewares
   participant H as Handler
 
@@ -163,13 +164,17 @@ sequenceDiagram
   E->>E: request id, cors, compression, json, cookies
   E->>DB: await connectDb()
   DB-->>E: ok
-  E->>R: /api/...
-  R->>M: requireAuth / requireRoles (if any)
+  opt When REDIS_URL is set
+    E->>Redis: rate-limit INCR/GET + dashboard cache GET/SET
+    Redis-->>E: limit count / cache hit or miss
+  end
+  E->>Rou: /api/...
+  Rou->>M: requireAuth / requireRoles (if any)
   M->>H: handler
   H-->>C: JSON response
 ```
 
-On requests that hit **rate limits** or **dashboard summary** with `REDIS_URL` configured, Express may read/write **Redis** inside the rate-limit store and `dashboardCache` (not shown as separate lifelines to keep the diagram readable).
+**Sync note:** This matches the code paths in `middlewares/rateLimit.js` ( **`rate-limit-redis`** when `REDIS_URL` is set) and `services/dashboardCache.js` (summary cache + generation bump on finance writes). If `REDIS_URL` is unset, the **opt** block is skipped—limits use memory and dashboard runs MongoDB aggregation every time.
 
 Note: `GET /api/health` is registered **before** the global `connectDb` middleware in `app.js`, so liveness does not require MongoDB. **`GET /api/health/ready`** is mounted **after** `connectDb` and returns **503** if the driver is not connected—use for readiness/orchestrator probes. All other routes mounted after `connectDb` require a successful DB connection before route handlers run.
 

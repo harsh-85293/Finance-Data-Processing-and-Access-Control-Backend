@@ -54,7 +54,7 @@ HTTP client
 
 **Scalability (operational):** Stateless JWT auth; configurable MongoDB pool (`MONGODB_MAX_POOL_SIZE` and related vars in `.env.example`); gzip **compression** on responses; **`X-Request-Id`** on every response for log correlation; **`GET /api/health`** for liveness (no DB) and **`GET /api/health/ready`** for readiness (DB connected); graceful shutdown (SIGTERM/SIGINT) closes HTTP, optional **Redis**, then MongoDB. **Optional Redis** (`REDIS_URL`): shared **rate-limit** state across multiple app instances and a short-TTL **cache** for dashboard summary (invalidated on finance create/update/delete). Omit Redis for local dev and CI—behaviour stays the same with in-memory limits and live aggregations. **Kafka** is not used here (would add heavy ops/CI cost for this scope). Details: **[system design](docs/system-design.md)** (NFR-7, NFR-8).
 
-More detail: **[system design](docs/system-design.md)**.
+The **HLD context diagram** (§4.1) and **request pipeline sequence diagram** (§5.2) both show **Redis** as optional infrastructure aligned with the code. More detail: **[system design](docs/system-design.md)**.
 
 ## RBAC matrix (simplified)
 
