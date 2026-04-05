@@ -329,27 +329,35 @@ Missing id / bad id → **400** or **404**.
 
 ## 7. Optional enhancements — how to test in Postman
 
-These map to **[requirements coverage](../docs/requirements-coverage.md)**. Below is what you can prove **from Postman** (plus one terminal section for automated tests).
+This section lines up with **[requirements coverage](../docs/requirements-coverage.md)**. Everything here is **Postman** (or optional Collection Runner). For **terminal / automated** tests, see **§9**.
+
+**Images:** Placeholders use empty `src=""`. Put your files under `api-testing-images/` (or elsewhere) and set each `src` to your path, e.g. `api-testing-images/your-screenshot.png`.
 
 ### 7.1 Pagination
 
-**Finance list** — same API as **§6.2** (`GET /api/finance/records` with query params).
+**Finance —** `GET /api/finance/records` (same route family as **§6.2**; add `page` and `limit`).
 
-1. Log in as **analyst** or **admin** (§3–4).
-2. **GET** `http://localhost:4000/api/finance/records?page=1&limit=2` — check `page`, `limit`, `total`, and `data` length ≤ `limit`.
-3. If `total` > 2, **GET** with `page=2` for the next slice.
+1. Authenticate as **analyst** or **admin** (§3–4).
+2. Call  
+   `http://localhost:4000/api/finance/records?page=1&limit=2`  
+   Confirm `page`, `limit`, `total`, and that `data` has at most `limit` items.
+3. If `total` > 2, call again with `page=2` and check the next page (or empty `data`).
 
-Embedded screenshot (same call family as §6.2):
+<!-- Screenshot: finance list pagination -->
 
-<img src="api-testing-images/read.png" height=450px width=900px alt="GET /api/finance/records — same as §6.2">
+<img src="api-testing-images/pn.png" height=450px width=900px alt="">
 
-**Users list (admin)** — `GET /api/users` is **not** shown earlier in this doc; there is no matching figure. Use the same Postman idea as finance (Params: `page`, `limit`). Response shape: `page`, `limit`, `total`, `data`.
+**Users (admin) —** `GET /api/users?page=1&limit=5` (admin JWT). Response includes `page`, `limit`, `total`, `data`.
+
+<!-- Screenshot: users list pagination (optional) -->
+
+<img src="api-testing-images/pn2.png" height=450px width=900px alt="">
 
 ### 7.2 Filtering (type, category, date range)
 
-Same **GET** `/api/finance/records` endpoint as **§6.2** and **§7.1** — only query values change. **No extra image**; reuse **`api-testing-images/read.png`** (§6.2 / §7.1).
+Still **`GET /api/finance/records`** — only the query string changes (structured filters, not full-text search).
 
-Examples:
+Try, for example:
 
 `http://localhost:4000/api/finance/records?type=income`
 
@@ -357,43 +365,51 @@ Examples:
 
 `http://localhost:4000/api/finance/records?dateFrom=2026-01-01&dateTo=2026-12-31`
 
-### 7.3 Soft delete (verify behaviour)
+Confirm filtered `data` and `total` match expectations.
 
-Follow the flow below. Where the HTTP call matches an earlier section, the image path is listed **in text** (no duplicate embedded figures here).
+<!-- Screenshot: filtered finance list -->
 
-| Step | API | Matches | Image path (see that section for full screenshot) |
-|------|-----|---------|---------------------------------------------------|
-| 1 | **POST** `/api/finance/records` | §6.4 | `api-testing-images/image-1.png` |
-| 2 | **DELETE** `/api/finance/records/:id` | §6.6 | `api-testing-images/dr.png` |
-| 3 | **GET** `/api/finance/records/:id` (expect **404**) | §6.3 layout | `api-testing-images/ger.png` |
-| 4 | **GET** `/api/finance/records` (list) | §6.2 | `api-testing-images/read.png` |
-| 5 | **GET** `/api/dashboard/summary` | §5 | `api-testing-images/image-5.png` |
+<img src="api-testing-images/filtering.png" height=450px width=900px alt="">
+<img src="api-testing-images/filtering1.png" height=450px width=900px alt="">
+<img src="api-testing-images/filtering2.png" height=450px width=900px alt="">
+
+### 7.3 Soft delete (end-to-end)
+
+1. **POST** `/api/finance/records` as **admin** — create a row; note `record.id` (see **§6.4**).
+2. **DELETE** `/api/finance/records/<RECORD_ID>` — expect **200** and `"Deleted data successfully"` (see **§6.6**).
+3. **GET** `/api/finance/records/<RECORD_ID>` — expect **404** (same request shape as **§6.3**).
+4. **GET** `/api/finance/records` — that id must not appear in `data` (**§6.2**).
+5. **GET** `/api/dashboard/summary` — totals / recent activity must not still include that row (**§5**).
+
+<!-- Same API as §6.4 POST create -->
+
+<img src="api-testing-images/image-1.png" height=450px width=900px alt="POST create — same as §6.4">
+
+<!-- Same API as §6.6 DELETE -->
+
+<img src="api-testing-images/dr.png" height=450px width=900px alt="DELETE — same as §6.6">
+
+<!-- Same request layout as §6.3 GET by id (here 404 body) -->
+
+<img src="api-testing-images/ger.png" height=450px width=900px alt="GET by id — same as §6.3">
+
+<!-- Same API as §6.2 list -->
+
+<img src="api-testing-images/read.png" height=450px width=900px alt="GET list — same as §6.2">
+
+<!-- Same API as §5 dashboard summary -->
+
+<img src="api-testing-images/image-5.png" height=450px width=900px alt="GET dashboard summary — same as §5">
 
 ### 7.4 Rate limiting
 
-The API limits requests **per IP** (defaults: **60 / 15 min** on `/api/auth`, **300 / 15 min** on other protected `/api` routes). In **tests** (`NODE_ENV=test`) limits are **off** — use a normal dev server for this check.
+Per **IP** (defaults: **60 / 15 min** on `/api/auth`, **300 / 15 min** on other protected `/api` routes). Limits are **disabled** when `NODE_ENV=test` — use a normal dev server.
 
-**Login spam (matches §3)** — **POST** `/api/auth/login` is the same request as in **§3**. Set `RATE_LIMIT_AUTH_MAX=3` in `.env`, restart the server, send login **four times**; the **fourth** should return **429** with `{ "message": "Too many requests, please try again later." }`.
+**Quick check on `/api/auth`:** In `financedashboardbackend/.env` set e.g. `RATE_LIMIT_AUTH_MAX=3`, restart, then **POST** `/api/auth/login` **four times** in a row. The fourth request should return **429** with a JSON `message` about too many requests.
 
-Embedded screenshot for the **login request** only (same API as §3):
+<!-- Screenshot: login request (same route as §3) -->
 
-<img src="api-testing-images/imagel.png" height=450px width=900px alt="POST /api/auth/login — same as §3">
-
-**429 body** — not identical to any earlier success screenshot; compare shape to **§6.4** forbidden response if needed: path `api-testing-images/image-6.png`.
-
-**Alternative:** Collection Runner on **GET** `/api/dashboard/summary` (same as **§5**) — path `api-testing-images/image-5.png` for the request style; **429** response still a small JSON error like above.
-
-### 7.5 Automated integration tests (terminal, not Postman)
-
-These are **not** exercised through Postman; they document that CI-style checks exist.
-
-From the **repo root**:
-
-```bash
-npm test -w financedashboardbackend
-```
-
-Expect all tests to pass (in-memory MongoDB, no real DB required). No prior screenshot in this guide for the terminal output.
+<img src="api-testing-images/rl.png" height=450px width=900px alt="">
 
 ---
 
@@ -410,4 +426,22 @@ POST `http://localhost:4000/api/auth/logout` → **200**; cookie cleared; JSON b
     "message": "Logged out successfully"
 }
 ```
+
+---
+
+## 9. Automated integration tests (terminal)
+
+This is **not** Postman — it runs the project’s **Node test suite** (same checks you might use in CI).
+
+From the **repo root**:
+
+```bash
+npm test -w financedashboardbackend
+```
+
+Uses **in-memory MongoDB**; all tests should pass without a real database.
+
+<!-- Screenshot: terminal output (optional) -->
+
+<img src="api-testing-images/test.png" height=450px width=900px alt="">
 
