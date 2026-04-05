@@ -9,7 +9,7 @@
 }
 ```
 
-<img src="image11.png" height=450px width=900px>
+<img src="api-testing-images/image11.png" height=450px width=900px>
 
 ## 2. Register (creates first user as admin on a fresh DB)
 - Method: POST
@@ -50,7 +50,7 @@
 
 - Send → 201. Postman can sto`re the cookie automatically for this domain.
 
-<img src="imager.png" height=450px width=900px>
+<img src="api-testing-images/imager.png" height=450px width=900px>
 
 ## 3. Login (if you already have a user)
 - POST `http://localhost:4000/api/auth/login`
@@ -79,28 +79,28 @@
     }
 }
 ```
-<img src="imagel.png" height=450px width=900px>
+<img src="api-testing-images/imagel.png" height=450px width=900px>
 
 ## 4. Using auth on other requests
 - Option A – Cookie (easiest in Postman)
 Postman Settings → enable “Send cookies with requests” (and use the same host localhost:4000).
 After register/login, call e.g. GET `http://localhost:4000/api/auth/me` — no extra headers if the cookie is sent.
-<img src="image-3.png" height=450px width=900px>
+<img src="api-testing-images/image-3.png" height=450px width=900px>
 
 - Option B – Bearer token
 Copy the JWT from the Set-Cookie header value for token=..., or sign in and read the cookie in Postman’s Cookies link under the URL bar.
 Or use Authorization → type Bearer Token → paste the token value.
 GET `http://localhost:4000/api/auth/me`
 
-<img src="image.png" height=450px width=900px>
+<img src="api-testing-images/image.png" height=450px width=900px>
 
-<img src="image-3.png" height=450px width=900px>
+<img src="api-testing-images/image-3.png" height=450px width=900px>
 
 ## 5. Try a protected route
 - Examples (with cookie or Bearer):
   - GET `http://localhost:4000/api/dashboard/summary`
 
-<img src="image-5.png" height=450px width=900px>
+<img src="api-testing-images/image-5.png" height=450px width=900px>
 
 ```json
 {
@@ -173,7 +173,7 @@ Body JSON:
 ```
 
 - Output (without admin rights)
-<img src="image-6.png" height=450px width=900px>
+<img src="api-testing-images/image-6.png" height=450px width=900px>
 
 ```json
 {
@@ -182,7 +182,7 @@ Body JSON:
 ```
 
 - Output (with admin rights)
-<img src="image-1.png" height=450px width=900px>
+<img src="api-testing-images/image-1.png" height=450px width=900px>
 
 ```json
 {
@@ -204,7 +204,7 @@ Body JSON:
 POST `http://localhost:4000/api/auth/logout` → 204; cookie cleared.
 
 - Output
-<img src="image-2.png" height=450px width=900px>
+<img src="api-testing-images/image-2.png" height=450px width=900px>
 
 ```json
 {
