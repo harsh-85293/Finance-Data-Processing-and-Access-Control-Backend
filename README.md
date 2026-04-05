@@ -1,4 +1,10 @@
 # Finance dashboard backend
+- Backend API's for finance dashboard are build using ExpressJS and NodeJS over Mongo DB, the API's focus on JWT auth, role-based access, and aggregated summaries.
+- The API's are written in the directory 'financedashboardbackend/`.
+- The repo's packages are written in `package.json` so installs work locally and on Render.
+- Serverless entry is `api/index.js` wrapping the same app with `serverless-http`.
+- This project requires Node 18+, a MongoDB URI, and npm (root `package-lock.json`).
+
 - Clone for Finance Data Processing and Access Control Backend.
 ```bash
 git clone <repo-url>
@@ -12,7 +18,8 @@ npm install
 cp financedashboardbackend/.env.example financedashboardbackend/.env
 ```
 
-Set **`MONGODB_URI`** and **`JWT_SECRET`** in `financedashboardbackend/.env` (use a long random secret in production).
+## Project Setup
+- Set **`MONGODB_URI`** and **`JWT_SECRET`** in `financedashboardbackend/.env` (use a long random secret in production).
 ```bash
 npm test -w financedashboardbackend
 npm run dev -w financedashboardbackend
