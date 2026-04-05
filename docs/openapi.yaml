@@ -3,6 +3,12 @@ info:
   title: Finance dashboard API
   description: |
     Main routes only. Behaviour, auth, and examples: see README and API Testing.md.
+
+    **Implementation-aligned notes (not every field is modeled per path):**
+    - **Responses** may include **`X-Request-Id`** (echoed or generated) for log correlation.
+    - **Rate limiting:** per IP on `/api/auth` and other `/api` groups; when **`REDIS_URL`** is set, counters are stored in Redis (`rate-limit-redis`) for multi-instance deployments; otherwise in-memory. **`RateLimit-*`** headers apply when limits are active (not in `NODE_ENV=test`).
+    - **Compression:** successful responses may be **gzip**-encoded when the client accepts it (`compression` middleware).
+    - **Dashboard `GET /api/dashboard/summary`:** when **`REDIS_URL`** is set, responses may be served from a short-TTL Redis cache (`dashboardCache.js`); finance writes bump cache generation so data stays consistent.
   version: 1.0.0
 
 servers:
@@ -21,6 +27,24 @@ tags:
   - name: Dashboard
 
 paths:
+  /:
+    get:
+      tags: [Health]
+      summary: Root ping (links to health)
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                  health:
+                    type: string
+                    example: /api/health
+
   /api/health:
     get:
       tags: [Health]
@@ -150,6 +174,8 @@ paths:
     get:
       tags: [Dashboard]
       summary: Aggregated dashboard data (all authenticated roles)
+      description: |
+        MongoDB aggregation when cache misses; optional Redis-backed cache when `REDIS_URL` is set (see repo `dashboardCache.js`).
       security: [{ bearerAuth: [] }, { cookieAuth: [] }]
       parameters:
         - name: dateFrom

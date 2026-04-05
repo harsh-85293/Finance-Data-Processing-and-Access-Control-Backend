@@ -12,6 +12,10 @@
 }
 ```
 
+- Optional: **`GET http://localhost:4000/`** → `{ "ok": true, "health": "/api/health" }`.
+- After MongoDB is up and the app has run **`connectDb`** (any normal `/api/...` request does this), **`GET http://localhost:4000/api/health/ready`** → `200` with `{ "ok": true, "db": "connected" }` (or **`503`** if the DB is not connected).
+- Response headers often include **`X-Request-Id`** (for log correlation). Screenshots under `api-testing-images/` are **examples**; re-run requests after code changes so captures match current behaviour.
+
 <img src="api-testing-images/image11.png" height=450px width=900px>
 
 ---

@@ -1,6 +1,6 @@
 # Finance dashboard backend — system design
 
-This document summarizes **high-level design (HLD)**, **low-level design (LLD)**, **workflows**, **requirements**, and **features** for this repository. It reflects the current Express + MongoDB implementation.
+This document summarizes **high-level design (HLD)**, **low-level design (LLD)**, **workflows**, **requirements**, and **features** for this repository. It reflects the current Express + MongoDB implementation and **optional Redis** (`REDIS_URL`) where described in **NFR-8** and §4.1 / §5.2.
 
 The [README](../README.md) has a short request-flow overview, RBAC table, and HTTP status list. [openapi.yaml](openapi.yaml) lists example paths.
 
@@ -351,7 +351,8 @@ flowchart TD
 ### 6.5 Dashboard summary (any authenticated role)
 
 1. User logs in (viewer/analyst/admin).  
-2. `GET /api/dashboard/summary?dateFrom&dateTo&trend` — aggregation pipeline on `FinancialRecord`.
+2. `GET /api/dashboard/summary?dateFrom&dateTo&trend` — aggregation pipeline on `FinancialRecord` (see `dashboard.service.js`).  
+3. If **`REDIS_URL`** is set, the handler may return a **cached JSON payload** from Redis (`dashboardCache.js`, TTL **`DASHBOARD_CACHE_TTL_SECONDS`**); any finance record **create / update / soft-delete** bumps a generation counter so cached rows are not reused after data changes. If Redis is not configured, every request runs the aggregation.
 
 ---
 

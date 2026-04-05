@@ -86,7 +86,7 @@ Inactive users receive **403** on protected routes.
 
 - **Passwords:** stored as **bcrypt** hashes; never returned in API JSON.  
 - **JWT:** signed with **`JWT_SECRET`**; optional **`Authorization: Bearer`** and httpOnly cookie **`token`**. Stateless — no server-side session store.  
-- **Rate limiting:** per IP on `/api/auth` and other protected `/api` groups (off when `NODE_ENV=test`).  
+- **Rate limiting:** per IP on `/api/auth` and other protected `/api` groups (off when `NODE_ENV=test`). With **`REDIS_URL`**, counters are stored in **Redis** so limits are consistent across multiple server instances.  
 - **Secrets:** do not commit **`financedashboardbackend/.env`**; copy from **`.env.example`**.
 
 ## Finance soft delete
@@ -99,14 +99,14 @@ MongoDB + Mongoose: **`users`** and **`financialrecords`**, with indexes for lis
 
 ## Documentation
 
-- **[System design](docs/system-design.md)** — Architecture, flows, and data model.  
+- **[System design](docs/system-design.md)** — Architecture, flows, and data model (Mermaid diagrams **§4.1**, **§5.2** are the source of truth for HLD/sequence; export new PNGs from GitHub/Mermaid preview for slides—**`api-testing-images/`** screenshots are examples and may lag until re-captured).  
 - **[Feature checklist](docs/feature-checklist.md)** — What’s implemented, in table form.  
-- **[openapi.yaml](docs/openapi.yaml)** — OpenAPI sketch for the main routes.  
+- **[openapi.yaml](docs/openapi.yaml)** — OpenAPI sketch for the main routes (includes cross-cutting notes: `X-Request-Id`, optional Redis cache/rate limits, compression).  
 - **[API Testing](API%20Testing.md)** — Postman walkthrough; images in [`api-testing-images/`](api-testing-images/).
 
 ## Running it locally
 
-After the [Quick start](#quick-start) steps: set `MONGODB_URI` and `JWT_SECRET` in `financedashboardbackend/.env`. Optional: `PORT` (default 4000), `JWT_EXPIRES_IN` (default 7d), `CLIENT_ORIGIN` for extra CORS origins. Local `localhost:3000` / `127.0.0.1:3000` are allowed by default; on Vercel, `VERCEL_URL` is added for CORS.
+After the [Quick start](#quick-start) steps: set `MONGODB_URI` and `JWT_SECRET` in `financedashboardbackend/.env`. Optional: `PORT` (default 4000), `JWT_EXPIRES_IN` (default 7d), `CLIENT_ORIGIN` for extra CORS origins, **`REDIS_URL`** for Redis-backed rate limits + dashboard cache (omit for local dev/CI), MongoDB pool vars (`MONGODB_MAX_POOL_SIZE`, etc.—see `.env.example`). Local `localhost:3000` / `127.0.0.1:3000` are allowed by default; on Vercel, `VERCEL_URL` is added for CORS.
 
 ```bash
 npm run dev -w financedashboardbackend
@@ -126,7 +126,7 @@ npm start -w financedashboardbackend
 
 ## Deploying
 
-**Vercel:** import this repo, leave **Root Directory** blank (repo root). Set `MONGODB_URI` and `JWT_SECRET` in the project env; add `CLIENT_ORIGIN` if the UI is on another origin. Push to `main` to deploy — redeploy after you change env vars. If Vercel keeps minting extra GitHub repos, you’re in the “create new repository” flow; you want **Import** on a repo that already exists.
+**Vercel:** import this repo, leave **Root Directory** blank (repo root). Set `MONGODB_URI` and `JWT_SECRET` in the project env; add `CLIENT_ORIGIN` if the UI is on another origin. Optional: **`REDIS_URL`** if you use a managed Redis for rate limits + dashboard cache. Push to `main` to deploy — redeploy after you change env vars. If Vercel keeps minting extra GitHub repos, you’re in the “create new repository” flow; you want **Import** on a repo that already exists.
 
 **Elsewhere (Render, Railway, a VPS, etc.):** run Node against this codebase. If the host uses repo root: build with `npm ci`, start with `npm start -w financedashboardbackend`. If you point the service at `financedashboardbackend/` only: `npm install` then `npm start`. Render sets `PORT` for you; the server already reads it.
 
@@ -159,11 +159,11 @@ Everything is under `/api`. JSON bodies expect `Content-Type: application/json`.
 
 **Finance records** — under `/finance/records`. List/detail: **analyst** or **admin**. Writes: **admin** only. List query params include `type` (`income` / `expense`), `category` (exact match, case-insensitive), `dateFrom` / `dateTo`, `page`, `limit`. Create/update use `amount`, `type`, `category`, `date`, optional `notes`. **Delete** is a **soft delete** (`deletedAt`); deleted rows are hidden from list, get-by-id, updates, and dashboard totals.
 
-**Rate limiting** — Per-IP limits on `/api/auth` (default 60 requests / 15 min) and on other protected `/api/*` routes (default 300 / 15 min). Tune with `RATE_LIMIT_AUTH_MAX` and `RATE_LIMIT_API_MAX` in env. Limits are skipped when `NODE_ENV=test` (automated tests). On Vercel, `trust proxy` is enabled automatically so limits use the client IP; for other reverse proxies set `TRUST_PROXY=1`.
+**Rate limiting** — Per-IP limits on `/api/auth` (default 60 requests / 15 min) and on other protected `/api/*` routes (default 300 / 15 min). Tune with `RATE_LIMIT_AUTH_MAX` and `RATE_LIMIT_API_MAX` in env. Limits are skipped when `NODE_ENV=test` (automated tests). Set **`REDIS_URL`** to use Redis-backed counters (`rate-limit-redis`) for horizontal scaling. On Vercel, `trust proxy` is enabled automatically so limits use the client IP; for other reverse proxies set `TRUST_PROXY=1`.
 
-**Dashboard** — `GET /dashboard/summary` for any logged-in role. Optional `dateFrom`, `dateTo`, and `trend` (`month` or `week`) for how trend buckets are shaped. Response includes totals, per-category numbers, recent rows, and trend series.
+**Dashboard** — `GET /dashboard/summary` for any logged-in role. Optional `dateFrom`, `dateTo`, and `trend` (`month` or `week`) for how trend buckets are shaped. Response includes totals, per-category numbers, recent rows, and trend series. With **`REDIS_URL`**, responses may be **cached** in Redis for a short TTL (see **`DASHBOARD_CACHE_TTL_SECONDS`** in `.env.example`); finance writes invalidate the cache.
 
-There’s also `GET /` and `GET /api/health` for sanity checks.
+**Sanity / probes** — `GET /` returns `{ "ok": true, "health": "/api/health" }`. **`GET /api/health`** is liveness (no DB). **`GET /api/health/ready`** is readiness (Mongo connected after `connectDb`). Successful responses include **`X-Request-Id`** for tracing.
 
 ## Example snippets
 

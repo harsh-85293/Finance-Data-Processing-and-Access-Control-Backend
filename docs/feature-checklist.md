@@ -8,7 +8,7 @@ What the API implements, in one place. Details: [system-design.md](system-design
 |---|------|--------|
 | **1** | Users & roles | `/api/users` for admins: list (paginated), create with role, update role/status/name. Register via `/api/auth/register` (first user → admin, later → viewer). Roles: viewer, analyst, admin ([README roles](../README.md#roles-quick-reference)). |
 | **2** | Finance records | `/api/finance/records` — amount, type, category, date, notes. Filters: `type`, `category`, `dateFrom`/`dateTo`, `page`/`limit`. Deletes are soft (`deletedAt`). |
-| **3** | Dashboard | `GET /api/dashboard/summary` — totals, categories, recent activity, trends (`trend=month` or `week`). Implemented in `dashboard.service.js` (aggregation). |
+| **3** | Dashboard | `GET /api/dashboard/summary` — totals, categories, recent activity, trends (`trend=month` or `week`). Implemented in `dashboard.service.js` (MongoDB aggregation); optional **Redis** response cache via `dashboardCache.js` when `REDIS_URL` is set (invalidated on finance writes). |
 | **4** | Access control | `requireAuth` + `requireRoles` on routes. Inactive users get **403**. |
 | **5** | Validation / errors | Validation in services/utils; global handler in `app.js` (400/401/403/404/409/500 as appropriate). |
 | **6** | Database | MongoDB + Mongoose via `MONGODB_URI`. |
